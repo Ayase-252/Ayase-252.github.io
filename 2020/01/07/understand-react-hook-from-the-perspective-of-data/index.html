@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"ayase.moe","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="React Hooks在 2020 年已经不是前沿的概念了。 Hooks 已经可以很自然地融入日常工作中。在绝大部分情况下， Hooks + Function Component 完全可以满足需求。 Hooks 的设计是非常有想象力的，说实话，在 Hooks 出现之前， 我完全想不出来有那么优雅的方式来将逻辑和 UI 组件融合在一起。 赞美之词先到这里，很多介绍 Hooks 的材料，包括官方文档都">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从数据的角度看React Hooks">
+<meta property="og:url" content="https://ayase.moe/2020/01/07/understand-react-hook-from-the-perspective-of-data/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="React Hooks在 2020 年已经不是前沿的概念了。 Hooks 已经可以很自然地融入日常工作中。在绝大部分情况下， Hooks + Function Component 完全可以满足需求。 Hooks 的设计是非常有想象力的，说实话，在 Hooks 出现之前， 我完全想不出来有那么优雅的方式来将逻辑和 UI 组件融合在一起。 赞美之词先到这里，很多介绍 Hooks 的材料，包括官方文档都">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ayase.moe/2020/01/07/understand-react-hook-from-the-perspective-of-data/suggestion.gif">
+<meta property="og:image" content="https://ayase.moe/2020/01/07/understand-react-hook-from-the-perspective-of-data/2020-01-07-23-06-04.png">
+<meta property="article:published_time" content="2020-01-07T17:04:42.000Z">
+<meta property="article:modified_time" content="2021-03-09T12:52:23.011Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="React Hooks">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ayase.moe/2020/01/07/understand-react-hook-from-the-perspective-of-data/suggestion.gif">
+
+<link rel="canonical" href="https://ayase.moe/2020/01/07/understand-react-hook-from-the-perspective-of-data/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>从数据的角度看React Hooks | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-85059083-2');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Ayase-252's wonderland</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2020/01/07/understand-react-hook-from-the-perspective-of-data/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          从数据的角度看React Hooks
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-01-08 01:04:42" itemprop="dateCreated datePublished" datetime="2020-01-08T01:04:42+08:00">2020-01-08</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-09 20:52:23" itemprop="dateModified" datetime="2021-03-09T20:52:23+08:00">2021-03-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Programming/" itemprop="url" rel="index"><span itemprop="name">Programming</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>5.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>5 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><a target="_blank" rel="noopener" href="https://reactjs.org/docs/hooks-intro.html">React Hooks</a>在 2020 年已经不是前沿的概念了。
+Hooks 已经可以很自然地融入日常工作中。在绝大部分情况下，
+Hooks + Function Component 完全可以满足需求。
+Hooks 的设计是非常有想象力的，说实话，在 Hooks 出现之前，
+我完全想不出来有那么优雅的方式来将逻辑和 UI 组件融合在一起。
+赞美之词先到这里，很多介绍 Hooks 的材料，包括官方文档都会以 Hooks
+与其相对应的 Class-based Component 的功能的比较来入门 Hooks 的核心概念。
+这令人看起来，Hooks 像是 Class-based Component 的<code>setState</code>与生命周期的延伸。
+其实不然，Hooks 创造出了一种更加声明式的编程范式。</p>
+<span id="more"></span>
+<h2 id="从一个带建议的输入框说起"><a class="header-anchor" href="#从一个带建议的输入框说起">¶</a>从一个带建议的输入框说起</h2>
+<p>带建议的输入框是非常常见的需求，例如 Google 的搜索建议。</p>
+<p><img src="/2020/01/07/understand-react-hook-from-the-perspective-of-data/suggestion.gif" alt="a input with suggestion"></p>
+<p>在这种需求中，一般而言后台会提供一个 API，
+我们以用户输入作为关键字调用这个 API 来获取备选词的列表。
+我们一起来使用 Class-based Component 来实现这个组件。为了简单起见，
+我们实现输入框和建议列表，点击建议项回填到输入框暂时不实现。</p>
+<p>首先，我们需要一个输入框和一个显示建议项的列表。</p>
+<figure class="highlight jsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AutoComplete</span> <span class="keyword">extends</span> <span class="title">React</span>.<span class="title">Component</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="title">render</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (</span><br><span class="line">      &lt;div&gt;</span><br><span class="line">        &lt;input /&gt;</span><br><span class="line">        &lt;ul&gt;&lt;/ul&gt;</span><br><span class="line">      &lt;/div&gt;</span><br><span class="line">    );</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="/2020/01/07/understand-react-hook-from-the-perspective-of-data/2020-01-07-23-06-04.png" alt="demo"></p>
+<p>然后，由于需要以近乎实时的方式给用户提供建议，
+用受控组件的方式来管理用户输入是更好的选择。这里我们新增加了一个状态<code>keyword</code>
+来保存用户的输入，增加了一个事件处理函数 <code>handleKeywordInput</code>。
+将 <code>handleKeywordInput</code> 绑定在 <code>onChange</code> 事件之后，
+我们的状态 <code>keyword</code> 就与用户输入同步了。</p>
+<figure class="highlight jsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AutoComplete</span> <span class="keyword">extends</span> <span class="title">React</span>.<span class="title">Component</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="title">constructor</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>();</span><br><span class="line">    <span class="built_in">this</span>.state = &#123;</span><br><span class="line">      keyword: <span class="string">&quot;&quot;</span></span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">this</span>.handleKeywordInput = <span class="built_in">this</span>.handleKeywordInput.bind(<span class="built_in">this</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">handleKeywordInput</span>(<span class="params">keyword</span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.setState(&#123;</span><br><span class="line">      keyword</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">render</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (</span><br><span class="line">      &lt;div&gt;</span><br><span class="line">        &lt;input</span><br><span class="line">          value=&#123;<span class="built_in">this</span>.state.input&#125;</span><br><span class="line">          onChange=&#123;<span class="function"><span class="params">event</span> =&gt;</span> <span class="built_in">this</span>.handleKeywordInput(event.target.value)&#125;</span><br><span class="line">        /&gt;</span><br><span class="line">        &lt;ul&gt;&lt;/ul&gt;</span><br><span class="line">      &lt;/div&gt;</span><br><span class="line">    );</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">ReactDOM.render(<span class="xml"><span class="tag">&lt;<span class="name">AutoComplete</span> /&gt;</span></span>, <span class="built_in">document</span>.getElementById(<span class="string">&quot;root&quot;</span>));</span><br></pre></td></tr></table></figure>
+<p>接下来，我们需要获取建议项的列表。显然，最好的时机是<code>componentDidUpdate</code>生命周期。
+同样为了简单期间，我们不调用真正的 API，用下面一个根据关键词来生成一个列表的函数来替代。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">fetchSuggestions</span>(<span class="params">keyword</span>) </span>&#123;</span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> <span class="built_in">Promise</span>(<span class="function">(<span class="params">resolve, reject</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">setTimeout</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">      resolve(</span><br><span class="line">        [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>].map(<span class="function"><span class="params">repeatTime</span> =&gt;</span> keyword.repeat(repeatTime)),</span><br><span class="line">        <span class="number">2000</span></span><br><span class="line">      );</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>有了这个<s>伪</s>API 之后，我们需要一个新的状态<code>suggestions</code>来保存获取到的建议项，
+并且使用<code>map</code>将这些建议项渲染出来。最终的代码就像这样。</p>
+<figure class="highlight jsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">AutoComplete</span> <span class="keyword">extends</span> <span class="title">React</span>.<span class="title">Component</span> </span>&#123;</span><br><span class="line">  <span class="function"><span class="title">constructor</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="built_in">super</span>();</span><br><span class="line">    <span class="built_in">this</span>.state = &#123;</span><br><span class="line">      keyword: <span class="string">&quot;&quot;</span>,</span><br><span class="line">      suggestions: []</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">this</span>.handleKeywordInput = <span class="built_in">this</span>.handleKeywordInput.bind(<span class="built_in">this</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">handleKeywordInput</span>(<span class="params">keyword</span>)</span> &#123;</span><br><span class="line">    <span class="built_in">this</span>.setState(&#123;</span><br><span class="line">      keyword</span><br><span class="line">    &#125;);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">async</span> <span class="function"><span class="title">componentDidUpdate</span>(<span class="params">prevProps, prevState</span>)</span> &#123;</span><br><span class="line">    <span class="keyword">if</span> (prevState.keyword !== <span class="built_in">this</span>.state.keyword) &#123;</span><br><span class="line">      <span class="keyword">const</span> newSuggestions = <span class="keyword">await</span> fetchSuggestions(<span class="built_in">this</span>.state.keyword);</span><br><span class="line">      <span class="built_in">this</span>.setState(&#123;</span><br><span class="line">        suggestions: newSuggestions</span><br><span class="line">      &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="function"><span class="title">render</span>(<span class="params"></span>)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> (</span><br><span class="line">      &lt;div&gt;</span><br><span class="line">        &lt;input</span><br><span class="line">          value=&#123;<span class="built_in">this</span>.state.keyword&#125;</span><br><span class="line">          onChange=&#123;<span class="function"><span class="params">event</span> =&gt;</span> <span class="built_in">this</span>.handleKeywordInput(event.target.value)&#125;</span><br><span class="line">        /&gt;</span><br><span class="line">        &lt;ul&gt;</span><br><span class="line">          &#123;<span class="built_in">this</span>.state.suggestions.map(<span class="function"><span class="params">suggestion</span> =&gt;</span> (</span><br><span class="line">            &lt;li key=&#123;suggestion&#125;&gt;&#123;suggestion&#125;&lt;/li&gt;</span><br><span class="line">          ))&#125;</span><br><span class="line">        &lt;/ul&gt;</span><br><span class="line">      &lt;/div&gt;</span><br><span class="line">    );</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Demo 如下:</p>
+<p class="codepen" data-height="265" data-theme-id="default" data-default-tab="result" data-user="ayase-252" data-slug-hash="wvByMqP" style="height: 265px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid; margin: 1em 0; padding: 1em;" data-pen-title="Suggestion CBC">
+  <span>See the Pen <a target="_blank" rel="noopener" href="https://codepen.io/ayase-252/pen/wvByMqP">
+  Suggestion CBC</a> by Qingyu Deng (<a target="_blank" rel="noopener" href="https://codepen.io/ayase-252">@ayase-252</a>)
+  on <a target="_blank" rel="noopener" href="https://codepen.io">CodePen</a>.</span>
+</p>
+<script async src="https://static.codepen.io/assets/embed/ei.js"></script>
+<p>让我们回想一下设计组件的整个思考流程：</p>
+<ul>
+<li>首先，我们用了两个标签将组件的整体轮廓给画了出来；</li>
+<li>然后，我们思考用户动作对数据的影响，因此，
+我们新建了状态<code>keyword</code>与事件处理函数<code>handleKeywordInput</code>来实现受控组件；</li>
+<li>接下来，我们<strong>为了获取</strong>建议列表，选择在 <code>componentDidUpdate</code>这个生命周期中调用 API。</li>
+<li>最后，我们渲染建议列表。</li>
+</ul>
+<p>可以看到，我们的思路仍然是命令式的。因为我们需要获取建议列表，
+所以我们要在组件的某个生命周期里去做这件事情。
+这样的思路对于熟悉命令式的开发者而言是很自然的。但是，
+如果我们从另外一个角度来看，是不是会有一些新的想法呢?</p>
+<h2 id="数据依赖"><a class="header-anchor" href="#数据依赖">¶</a>数据依赖</h2>
+<p>从需求来看，建议列表<code>suggestions</code>是我们通过向一个 API 输入关键词<code>keyword</code>获取的。从数据的关系来看，
+建议列表<code>suggestions</code>就像是关键词<code>keyword</code>的<a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/14551845/what-is-satellite-information-in-data-structures">卫星数据</a>。
+换句话说，<code>suggestions</code>是依赖的<code>keyword</code>。想起数据依赖，
+熟悉 Hooks API 的同学可能会想起<code>useEffect</code>等 API 中的依赖数组。
+没有错，这些 API 就是我们刻画数据依赖关系的核心。</p>
+<h2 id="用-hooks-重写带建议的输入框"><a class="header-anchor" href="#用-hooks-重写带建议的输入框">¶</a>用 Hooks 重写带建议的输入框</h2>
+<p>在上一节中，我们发现了<code>suggestions</code>依赖于<code>keyword</code>。
+我们可以很方便地用<code>useEffect</code>来刻画这样的数据依赖关系。
+现在，让我们用 Hooks 重写这个组件。</p>
+<p>首先，我们仍然会有一个<code>keyword</code>状态与一个<code>suggestions</code>状态。然后，
+为了表现两者的依赖关系，我们使用以<code>[keyword]</code>为依赖数组的 <code>useEffect</code>来<strong>自动地</strong>
+在<code>keyword</code>改变的时候重新获取相对应的<code>suggestions</code>。</p>
+<figure class="highlight jsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">AutoComplete</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="comment">// ----- 数据逻辑</span></span><br><span class="line">  <span class="keyword">const</span> [keyword, setKeyword] = useState(<span class="string">&quot;&quot;</span>);</span><br><span class="line">  <span class="keyword">const</span> [suggestions, setSuggestions] = useState([]);</span><br><span class="line">  useEffect(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">_fetchSuggestions</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">const</span> newSuggestions = <span class="keyword">await</span> fetchSuggestions(keyword);</span><br><span class="line">      setSuggestions(newSuggestions);</span><br><span class="line">    &#125;</span><br><span class="line">    _fetchSuggestions();</span><br><span class="line">  &#125;, [keyword]);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// -----交互逻辑</span></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">handleKeywordInput</span>(<span class="params">keyword</span>) </span>&#123;</span><br><span class="line">    setKeyword(keyword);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">    &lt;div&gt;</span><br><span class="line">      &lt;input</span><br><span class="line">        value=&#123;keyword&#125;</span><br><span class="line">        onChange=&#123;<span class="function"><span class="params">event</span> =&gt;</span> handleKeywordInput(event.target.value)&#125;</span><br><span class="line">      /&gt;</span><br><span class="line">      &lt;ul&gt;</span><br><span class="line">        &#123;suggestions.map(<span class="function">(<span class="params">suggestion, idx</span>) =&gt;</span> (</span><br><span class="line">          &lt;li key=&#123;idx&#125;&gt;&#123;suggestion&#125;&lt;/li&gt;</span><br><span class="line">        ))&#125;</span><br><span class="line">      &lt;/ul&gt;</span><br><span class="line">    &lt;/div&gt;</span><br><span class="line">  );</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Demo 如下：</p>
+<p class="codepen" data-height="265" data-theme-id="default" data-default-tab="result" data-user="ayase-252" data-slug-hash="ZEYrWwp" style="height: 265px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border: 2px solid; margin: 1em 0; padding: 1em;" data-pen-title="Sugguestion with Hooks">
+  <span>See the Pen <a target="_blank" rel="noopener" href="https://codepen.io/ayase-252/pen/ZEYrWwp">
+  Sugguestion with Hooks</a> by Qingyu Deng (<a target="_blank" rel="noopener" href="https://codepen.io/ayase-252">@ayase-252</a>)
+  on <a target="_blank" rel="noopener" href="https://codepen.io">CodePen</a>.</span>
+</p>
+<script async src="https://static.codepen.io/assets/embed/ei.js"></script>
+<p>我们回顾使用 Hooks 实现的思路。我们不再是<em>为了获取某个数据，然后在某个生命周期里执行某些操作去考虑。</em>
+而是变成了，<em>因为某个数据 A 是依赖某个数据 B 的，所以在被依赖数据 B 改变的时候，我们也应该通过某些手段让数据 A 与数据 B 同步。</em>
+我们不再刻意地去挑选同步的时机，刚渲染完也好（<code>componentDidMount</code>）、
+刚更新完也好（<code>compnentDidUpdate</code>）甚至是任意时候，
+只要框架能够保证这两个数据是同步的就行。正因为如此，在 Hooks 的作用下，
+React 的数据管理能够变得更加声明化。</p>
+<p>由于我们不必要去挑选数据同步时机，组件的生命周期这一概念消失了。
+数据之间的交互与组件彻底解耦，因此，Hooks 带来了第二个好处——逻辑重用。
+我们可以很轻松地将通过关键词来获取建议的逻辑封装起来变成一个自定义 Hook——<code>useSuggestions</code>。</p>
+<figure class="highlight jsx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">useSuggestions</span> </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> [keyword, setKeyword] = useState(<span class="string">&#x27;&#x27;</span>)</span><br><span class="line">  <span class="keyword">const</span> [suggestions, setSuggestions] = useState([])</span><br><span class="line">  useEffect(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">async</span> <span class="function"><span class="keyword">function</span> <span class="title">_fetchSuggestions</span>(<span class="params"></span>) </span>&#123;</span><br><span class="line">      <span class="keyword">const</span> newSuggestions = <span class="keyword">await</span> fetchSuggestions(keyword)</span><br><span class="line">      setSuggestions(newSuggestions)</span><br><span class="line">    &#125;</span><br><span class="line">    _fetchSuggestions()</span><br><span class="line">  &#125;, [keyword])</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> &#123;</span><br><span class="line">    setKeyword,</span><br><span class="line">    keyword,</span><br><span class="line">    suggestions</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">function</span> <span class="title">AutoComplete</span> (<span class="params"></span>) </span>&#123;</span><br><span class="line">  <span class="keyword">const</span> &#123;keyword, setKeyword, suggestions&#125; = useSuggestions()</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">function</span> <span class="title">handleKeywordInput</span>(<span class="params">keyword</span>) </span>&#123;</span><br><span class="line">    setKeyword(keyword)</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> (</span><br><span class="line">      &lt;div&gt;</span><br><span class="line">        &lt;input</span><br><span class="line">          value=&#123;keyword&#125;</span><br><span class="line">          onChange=&#123;<span class="function"><span class="params">event</span> =&gt;</span> handleKeywordInput(event.target.value)&#125;</span><br><span class="line">        /&gt;</span><br><span class="line">        &lt;ul&gt;</span><br><span class="line">           &#123;suggestions.map(<span class="function">(<span class="params">suggestion, idx</span>) =&gt;</span> <span class="xml"><span class="tag">&lt;<span class="name">li</span> <span class="attr">key</span>=<span class="string">&#123;idx&#125;</span>&gt;</span>&#123;suggestion&#125;<span class="tag">&lt;/<span class="name">li</span>&gt;</span></span>)&#125;</span><br><span class="line">        &lt;/ul&gt;</span><br><span class="line">      &lt;/div&gt;</span><br><span class="line">  )</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>现在我们可以在其他组件上也可以用到根据关键词提供的建议列表了。甚至，
+通过参数化请求方法，我们可以创造出更加通用的 Hook。
+具体的组件不需要知道里面的数据之间的交互逻辑。
+因此，Hooks 开创了可以将一些业务中典型的数据交互逻辑抽象出来的方法。这一方面，
+无论是之前的 Class-based Component 或者 Vue 的响应式系统都是没能做到的。</p>
+<h2 id="总结"><a class="header-anchor" href="#总结">¶</a>总结</h2>
+<p>Hooks 强调数据之间的依赖关系，在 Hooks 的框架下：</p>
+<ul>
+<li>相关联的数据可以自动地同步；</li>
+<li>Hooks 是独立于组件的；</li>
+</ul>
+<p>前者免除了我们需要手动同步相关联数据的需要，抹除了组件生命周期的存在意义；
+后者可以将业务中典型的数据交互逻辑抽象出来应用于其他组件中。通过 Hooks，
+我们实现组件的思路得以更加向声明式与数据驱动靠近。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+  <div class="followme">
+    <p>欢迎关注我的其它发布渠道</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+        </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/React-Hooks/" rel="tag"># React Hooks</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2019/11/01/weathering-with-you-review/" rel="prev" title="「只要有爱，世界与我何干」——《天气之子》观后感">
+      <i class="fa fa-chevron-left"></i> 「只要有爱，世界与我何干」——《天气之子》观后感
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/09/08/logic-and-data/" rel="next" title="逻辑与数据">
+      逻辑与数据 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%8E%E4%B8%80%E4%B8%AA%E5%B8%A6%E5%BB%BA%E8%AE%AE%E7%9A%84%E8%BE%93%E5%85%A5%E6%A1%86%E8%AF%B4%E8%B5%B7"><span class="nav-number">1.</span> <span class="nav-text">从一个带建议的输入框说起</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E4%BE%9D%E8%B5%96"><span class="nav-number">2.</span> <span class="nav-text">数据依赖</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%94%A8-hooks-%E9%87%8D%E5%86%99%E5%B8%A6%E5%BB%BA%E8%AE%AE%E7%9A%84%E8%BE%93%E5%85%A5%E6%A1%86"><span class="nav-number">3.</span> <span class="nav-text">用 Hooks 重写带建议的输入框</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">61</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:bitdqy@hotmail.com" title="E-Mail → mailto:bitdqy@hotmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">116k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:46</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

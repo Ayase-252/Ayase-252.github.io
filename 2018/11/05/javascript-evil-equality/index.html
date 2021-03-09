@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"ayase.moe","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="昨天睡觉前刷到一道面试题，这个问题萦绕在我的脑海里，使得我失眠到凌晨3点。题干很简单： [] &#x3D;&#x3D; ![]的结果是什么？ 所以我们今天来介绍一下问题的主角——相等操作符&#x3D;&#x3D;，看完今天的文章，也许技术上没有什么提升，因为这玩意坑太多在开发中是极力避免使用的。但是这是一个很好的JavaScript式的问题。即如何在混乱中走出一条秩序的道路。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="混乱邪恶：JavaScript中的相等操作符（&#x3D;&#x3D;）">
+<meta property="og:url" content="https://ayase.moe/2018/11/05/javascript-evil-equality/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="昨天睡觉前刷到一道面试题，这个问题萦绕在我的脑海里，使得我失眠到凌晨3点。题干很简单： [] &#x3D;&#x3D; ![]的结果是什么？ 所以我们今天来介绍一下问题的主角——相等操作符&#x3D;&#x3D;，看完今天的文章，也许技术上没有什么提升，因为这玩意坑太多在开发中是极力避免使用的。但是这是一个很好的JavaScript式的问题。即如何在混乱中走出一条秩序的道路。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ayase.moe/2018/11/05/javascript-evil-equality/reddit-comment.png">
+<meta property="article:published_time" content="2018-11-05T12:59:59.000Z">
+<meta property="article:modified_time" content="2021-03-09T12:52:23.007Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="JavaScript">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ayase.moe/2018/11/05/javascript-evil-equality/reddit-comment.png">
+
+<link rel="canonical" href="https://ayase.moe/2018/11/05/javascript-evil-equality/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>混乱邪恶：JavaScript中的相等操作符（==） | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-85059083-2');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Ayase-252's wonderland</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2018/11/05/javascript-evil-equality/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          混乱邪恶：JavaScript中的相等操作符（==）
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-11-05 20:59:59" itemprop="dateCreated datePublished" datetime="2018-11-05T20:59:59+08:00">2018-11-05</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-09 20:52:23" itemprop="dateModified" datetime="2021-03-09T20:52:23+08:00">2021-03-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Programming/" itemprop="url" rel="index"><span itemprop="name">Programming</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>2 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>昨天睡觉前刷到一道面试题，这个问题萦绕在我的脑海里，使得我失眠到凌晨3点。题干很简单：
+<code>[] == ![]</code>的结果是什么？</p>
+<p>所以我们今天来介绍一下问题的主角——相等操作符<code>==</code>，看完今天的文章，也许技术上没有什么提升，因为这玩意坑太多在开发中是极力避免使用的。但是这是一个很好的JavaScript式的问题。即如何在混乱中走出一条秩序的道路。</p>
+<span id="more"></span>
+<p>现在请回答以下表达式的返回值，以及<code>if</code>语句会不会执行。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span> == <span class="literal">false</span></span><br><span class="line"><span class="string">&#x27;0&#x27;</span> == <span class="literal">false</span></span><br><span class="line"><span class="keyword">if</span> (<span class="string">&#x27;0&#x27;</span>) &#123;</span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">&#x27;Yes, believe me, it will be executed&#x27;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>答案是：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">0</span> == <span class="literal">false</span> <span class="comment">// true</span></span><br><span class="line"><span class="string">&#x27;0&#x27;</span> == <span class="literal">false</span> <span class="comment">//true</span></span><br><span class="line"><span class="keyword">if</span> (<span class="string">&#x27;0&#x27;</span>) &#123; <span class="comment">// true, it will be executed</span></span><br><span class="line">  <span class="built_in">console</span>.log(<span class="string">&#x27;Yes, believe me, it will be executed&#x27;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>明明<code>'0' == false</code>成立，为什么<code>'0'</code>在<code>if</code>中被认为是<code>true</code>呢？（现在不要深究这个问题，否则大脑会stack overflow的，相信我）这个结果混乱的相等操作符<code>==</code>是无数BUG的根源。有人总结过各种类型的值使用<code>==</code>比较后的结果，有兴趣的话可以看看<a target="_blank" rel="noopener" href="https://dorey.github.io/JavaScript-Equality-Table/">JS Comparision Table</a>。Reddit上一位网友对此的评论，我认为很精髓：</p>
+<p><img src="/2018/11/05/javascript-evil-equality/reddit-comment.png" alt="reddit comment"></p>
+<h2 id="万恶之源-隐式类型转换"><a class="header-anchor" href="#万恶之源-隐式类型转换">¶</a>万恶之源——隐式类型转换</h2>
+<p><code>==</code>之所以变得那么不讲道理，是因为在使用<code>==</code>时，对两边表达式进行<strong>隐式类型转换</strong>。这里，我推荐一篇文章“<a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000008432611">从[]==![]为true来剖析JavaScript各种蛋疼的类型转换</a>”。这篇文章把整个<code>==</code>涉及的表达式值的转换过程讲的非常清楚。字比较多，大家慢慢看哈wwww。</p>
+<p>好，看完回来，相信大家对隐式转换的过程有一定的了解了。但是这篇文章对<code>toPrimitive</code>介绍的不够清晰，这里我再推荐一篇文章<a target="_blank" rel="noopener" href="https://javascript.info/object-toprimitive">Object to primitive conversion</a>。</p>
+<p>让我们总结一下从上面学到的一些东西：</p>
+<blockquote>
+<p>在相等操作符中：</p>
+<ol>
+<li><code>undefine == null</code>，<code>undefine</code>和<code>null</code>与其他任何类型比较均为<code>false</code>；</li>
+<li>若两边类型相同，按照各自类型的抽象相等规则比较：
+2.1 <code>number</code>比较大小；
+2.2 <code>string</code>只有在长度和对应位置字符都相等才相等；
+2.3 <code>boolean</code>，不用说了吧…
+2.4 <code>object</code>，比较类在内存中的地址（即两个类指向的是同一个类）；</li>
+<li>基本类型(<code>boolean</code>, <code>string</code>)转化为<code>number</code>后相互比较；</li>
+<li><code>Object</code>使用<code>ToPrmitive</code>算法转化为基本类型之后按2比较。</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>ToPrimitive算法：
+在相等操作符中，内置的<code>Object</code>（除了<code>Date</code>）均以<code>default</code>为hint转换为基本类型：</p>
+<ol>
+<li>如果有<code>.valueOf()</code>，尝试使用<code>.valueOf()</code>返回<strong>基本类型</strong>；</li>
+<li>如果没有<code>.valueOf()</code>，或者上一步尝试失败，但是有<code>.toString()</code>，尝试使用<code>.toString()</code>返回<strong>基本类型</strong>；</li>
+<li>如果都没有，或者上一步尝试失败，报错<code>TypeError</code>；</li>
+</ol>
+<p><code>Date</code>以<code>string</code>为hint转化为基本类型：</p>
+<ol>
+<li>如果有<code>.toString()</code>，尝试使用<code>.toString()</code>返回<strong>基本类型</strong>；</li>
+<li>如果没有<code>.toString()</code>，或者上一步尝试失败，但是有<code>.valueOf()</code>，尝试使用<code>.valueOf()</code>返回基本类型；</li>
+<li>如果都没有，或者上一步尝试失败，报错<code>TypeError</code></li>
+</ol>
+</blockquote>
+<p>如果对<code>Date</code>的转换规则有疑虑的话，可以运行下面的代码验证：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> date = <span class="keyword">new</span> <span class="built_in">Date</span>()</span><br><span class="line"><span class="built_in">console</span>.log(date == date.valueOf())  <span class="comment">// false</span></span><br><span class="line"><span class="built_in">console</span>.log(date == date.toString()) <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+<h2 id="基本object的类型转换"><a class="header-anchor" href="#基本object的类型转换">¶</a>基本<code>Object</code>的类型转换</h2>
+<p>下面看一些常用的基本类型的<code>.valueOf()</code>以及<code>toString()</code>是什么，列表总结如下：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>具体值</th>
+<th><code>.valueOf()</code></th>
+<th><code>.toString()</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Object</code></td>
+<td><code>&#123;a: 1, b: 2&#125;</code></td>
+<td><code>&#123;a: 1, b: 2&#125;</code></td>
+<td><code>&quot;[object Object]&quot;</code></td>
+</tr>
+<tr>
+<td><code>Array</code></td>
+<td>[1, 2, 3]</td>
+<td><code>[1, 2, 3]</code></td>
+<td><code>&quot;1, 2, 3&quot;</code></td>
+</tr>
+<tr>
+<td><code>Date</code></td>
+<td><code>new Date('1970/1/1 00:00:00 GMT')</code></td>
+<td><code>0</code></td>
+<td><code>&quot;Thu Jan 01 1970 08:00:00 GMT+0800 (中国标准时间)&quot;</code></td>
+</tr>
+</tbody>
+</table>
+<p>可以看到<code>Object</code>与<code>Array</code>的<code>ToPrimitive</code>的首选方法<code>.valueOf()</code>返回的均不是基本类型之一，因此会使用<code>toString()</code>。。。Oh my god。。</p>
+<h2 id="那么我们开篇问题的答案是"><a class="header-anchor" href="#那么我们开篇问题的答案是">¶</a>那么我们开篇问题的答案是</h2>
+<p>是<code>true</code>。先写出整个表达式<code>[] == ![]</code>，右边<code>![]</code>是<code>false</code>（对于非操作符，是这么操作的<code>!toBoolean(GetValue(expr))</code>），而对于所有<code>Object</code>，<code>toBoolean</code>的结果都是<code>true</code>，所以右边整个式子是<code>false</code>，然后这个布尔值转化为数字是<code>0</code>。接下来我们来看左边，首先<code>[]</code>用<code>toPrimitive</code>转化为基本类型是<code>&quot;&quot;</code>，然后这个字符串转化为数字，结果也是<code>0</code>。最后<code>0 == 0</code>，当然是<code>true</code>啦。</p>
+<h2 id="总结"><a class="header-anchor" href="#总结">¶</a>总结</h2>
+<p>我一直认为相等操作符是JavaScript的设计失误之一。要弄清楚一个相等操作符的结果，与做一道数学证明题相似，从题目到中间结果到中间结果…到结果。所以，<code>==</code>仅适用于题目，而对于开发项目而言可能是万恶之源。好在JavaScript提供了正常一些的严格相等操作符<code>===</code>。所以总结就是：</p>
+<blockquote>
+<p>Always use 3 equals unless you have a good reason to use 2.</p>
+<p>节选自<a target="_blank" rel="noopener" href="https://dorey.github.io/JavaScript-Equality-Table/">JS Comparision Table</a></p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+        
+
+  <div class="followme">
+    <p>欢迎关注我的其它发布渠道</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+        </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/JavaScript/" rel="tag"># JavaScript</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/10/24/failed-on-scroll-in-Vue/" rel="prev" title="Vue中无效的`scroll`事件handle">
+      <i class="fa fa-chevron-left"></i> Vue中无效的`scroll`事件handle
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/11/11/pure-flex-dice/" rel="next" title="纯CSS Flex实现骰子5点布局">
+      纯CSS Flex实现骰子5点布局 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%87%E6%81%B6%E4%B9%8B%E6%BA%90-%E9%9A%90%E5%BC%8F%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2"><span class="nav-number">1.</span> <span class="nav-text">万恶之源——隐式类型转换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%ACobject%E7%9A%84%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2"><span class="nav-number">2.</span> <span class="nav-text">基本Object的类型转换</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%82%A3%E4%B9%88%E6%88%91%E4%BB%AC%E5%BC%80%E7%AF%87%E9%97%AE%E9%A2%98%E7%9A%84%E7%AD%94%E6%A1%88%E6%98%AF"><span class="nav-number">3.</span> <span class="nav-text">那么我们开篇问题的答案是</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">61</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:bitdqy@hotmail.com" title="E-Mail → mailto:bitdqy@hotmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">116k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:46</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+</body>
+</html>

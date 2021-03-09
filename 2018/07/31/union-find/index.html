@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"ayase.moe","root":"/","scheme":"Gemini","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="图是一种非常有用的数据结构。很多问题可以看作是图来处理，如迷宫、网络等等。有的时候，我们需要寻找图的连通分量。如LeetCode的721题（账号整合），解法的中心思路就是把Email看作是图中的节点，通过动态的增加边（把在同一个账户中的Email连接起来），最后读出图中的所有连通分量。这里，我们介绍一种专门处理图的动态连接性问题的算法——Union-Find。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="解决图的动态连接性问题：Union-Find算法">
+<meta property="og:url" content="https://ayase.moe/2018/07/31/union-find/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="图是一种非常有用的数据结构。很多问题可以看作是图来处理，如迷宫、网络等等。有的时候，我们需要寻找图的连通分量。如LeetCode的721题（账号整合），解法的中心思路就是把Email看作是图中的节点，通过动态的增加边（把在同一个账户中的Email连接起来），最后读出图中的所有连通分量。这里，我们介绍一种专门处理图的动态连接性问题的算法——Union-Find。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-07-31T11:59:36.000Z">
+<meta property="article:modified_time" content="2021-03-09T12:52:23.011Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="Algorithm">
+<meta property="article:tag" content="Graph">
+<meta property="article:tag" content="Union-Find">
+<meta property="article:tag" content="Dynamic Connectivity">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://ayase.moe/2018/07/31/union-find/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>解决图的动态连接性问题：Union-Find算法 | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+    <script>
+      if (CONFIG.hostname === location.hostname) {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'UA-85059083-2');
+      }
+    </script>
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Ayase-252's wonderland</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2018/07/31/union-find/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          解决图的动态连接性问题：Union-Find算法
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2018-07-31 19:59:36" itemprop="dateCreated datePublished" datetime="2018-07-31T19:59:36+08:00">2018-07-31</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2021-03-09 20:52:23" itemprop="dateModified" datetime="2021-03-09T20:52:23+08:00">2021-03-09</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Note/" itemprop="url" rel="index"><span itemprop="name">Note</span></a>
+                </span>
+            </span>
+
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.7k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>图是一种非常有用的数据结构。很多问题可以看作是图来处理，如迷宫、网络等等。有的时候，我们需要寻找图的连通分量。如<a target="_blank" rel="noopener" href="https://leetcode.com/problems/accounts-merge/description/">LeetCode的721题（账号整合）</a>，解法的中心思路就是把Email看作是图中的节点，通过动态的增加边（把在同一个账户中的Email连接起来），最后读出图中的所有连通分量。这里，我们介绍一种专门处理图的动态连接性问题的算法——Union-Find。</p>
+<span id="more"></span>
+<p><em>关于Union-Find算法，在Robert Sedgewick等所著的《Algorithms 4 ed.》的1.5节有图文并茂的描述，有兴趣的话可以参阅。</em></p>
+<h2 id="中心思想"><a class="header-anchor" href="#中心思想">¶</a>中心思想</h2>
+<p>对于图的动态连接性问题，我们最关心的问题是：图中节点间之间是否存在路径（节点是否处于同一个连通分量中）。对于图的动态变化，我们允许动态地添加边，但是不允许删除边。因此，定义API如下：</p>
+<table>
+<thead>
+<tr>
+<th>API签名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bool connected(int p, int q)</code></td>
+<td>节点<code>p</code>与节点<code>q</code>是否连通</td>
+</tr>
+<tr>
+<td><code>void union(int p, int q)</code></td>
+<td>将节点<code>p</code>与节点<code>q</code>连接起来</td>
+</tr>
+<tr>
+<td><code>int find(int p)</code></td>
+<td>寻找<code>p</code>处于哪一个连通分量中</td>
+</tr>
+</tbody>
+</table>
+<p>很显然，对于<code>connected</code>方法，只要检查<code>p</code>与<code>q</code>是否处于一个连通分量中就行，实现很直观：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">UnionFind</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">find</span>(<span class="params">self, p</span>):</span></span><br><span class="line">        <span class="comment"># To be implemented</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">connected</span>(<span class="params">self, p, q</span>):</span></span><br><span class="line">        <span class="keyword">return</span> find(p) == find(q)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Union-Find算法的核心在于<code>union</code>方法与<code>find</code>方法的实现上，根据侧重操作的不同可以演变为三种不同的版本Quick-Find, Quick-Union与Weighted-Union。</p>
+<h2 id="quick-find"><a class="header-anchor" href="#quick-find">¶</a>Quick-Find</h2>
+<p>Quick-Find算法是理解起来最简单直接的Union-Find算法。核心思想就是通过一个数组持续地追踪节点处在的连通分量。实现如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">QuickFind</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, numNode</span>):</span></span><br><span class="line">        <span class="comment"># _id数组表示的是各个节点的连通分量号</span></span><br><span class="line">        self._id = <span class="built_in">list</span>(<span class="built_in">range</span>(numNode))</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">union</span>(<span class="params">self, p, q</span>):</span></span><br><span class="line">        pId = self.find(p)</span><br><span class="line">        qId = self.find(q)</span><br><span class="line">        <span class="comment"># 将所有处于q所在连通分量的节点放在p所在的连通分量中</span></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(<span class="built_in">len</span>(self._id)):</span><br><span class="line">            <span class="keyword">if</span> self._id[i] == qId：</span><br><span class="line">                self._id[i] = pId</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">find</span>(<span class="params">self, p</span>):</span></span><br><span class="line">        <span class="keyword">return</span> self._id[p]</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>通过分析这个简单的实现，不难看出为什么它叫Quick-Find版本。<code>find</code>操作仅仅需要返回<code>_id</code>数组中所储存的数，时间复杂度为常数，即$O(1)$。但是对于<code>union</code>操作，假设节点数为$N$，它每次都需要遍历所有的节点，因此时间复杂度为$O(N)$。对于动态变化非常多的图，Quick-Find版本的性能就会比较低了。我们有什么办法能够提高<code>union</code>操作的性能呢？</p>
+<h2 id="quick-union"><a class="header-anchor" href="#quick-union">¶</a>Quick-Union</h2>
+<p>联想到对于元素插入频繁的情况，链表的表现要比数组来的好。因此我们可以模拟一个“链表”，准确来说是一颗树，把属于同一连通分量的元素放在一棵树中，用这棵树的根节点作为连通分量的编号。在这种想法下，我们可以实现Quick-Union：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">QuickUnion</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, numNode</span>):</span></span><br><span class="line">        <span class="comment"># parent数组表示各个节点的父节点</span></span><br><span class="line">        self.parent = <span class="built_in">list</span>(<span class="built_in">range</span>(numNode))</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">union</span>(<span class="params">self, p, q</span>):</span></span><br><span class="line">        <span class="comment"># 找到p所在连通分量（树）的根节点</span></span><br><span class="line">        pRoot = self.find(p)</span><br><span class="line">        qRoot = self.find(q)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 将p树的根节点接在q树的根节点下</span></span><br><span class="line">        self.parent[pRoot] = qRoot</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">find</span>(<span class="params">self, p</span>):</span></span><br><span class="line">        <span class="comment"># 寻找p树的根节点</span></span><br><span class="line">        last = p</span><br><span class="line">        <span class="keyword">while</span> self.parent[last] != last:</span><br><span class="line">            last = self.parent[last]</span><br><span class="line">        <span class="keyword">return</span> last</span><br></pre></td></tr></table></figure>
+<p>从上面的实现可以看出，<code>union</code>除去寻找根节点的所需的耗时，只需要一个将一棵树的根节点放在另外一棵树的根节点下的操作，是常数时间，因此<code>union</code>操作的时间复杂度取决于<code>find</code>操作，但是<code>find</code>操作需要从指定节点遍历到根节点，在最坏情况下需要$O(N)$的时间。</p>
+<pre><code>对于有4个节点的图的最坏情况
+
+         A
+        /
+       B
+      /
+     C
+    /
+   D
+如果find(D)的话需要遍历所有的节点。
+</code></pre>
+<p>Quick-Union版本的<code>find</code>操作效率变得比较低。但是我们可以看到，<code>find</code>的最坏情况就是需要从树的叶子节点遍历到根节点，所需要的步数就是树的高度。如果我们有办法去降低树的高度，<code>find</code>操作效率就会提升。所幸，我们可以用几条代码就可以提高Quick-Union的性能。</p>
+<h2 id="weighted-union"><a class="header-anchor" href="#weighted-union">¶</a>Weighted-Union</h2>
+<p>为了使树的高度降低，在整合两颗树的时候，把较小的树放在较大的树的下面是比较好的。因此，为了实时地掌握树的规模（树的节点数），我们增加一个数组去追踪这一情况。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">WeightedUnion</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, numNode</span>):</span></span><br><span class="line">        <span class="comment"># parent数组表示各个节点的父节点</span></span><br><span class="line">        self.parent = <span class="built_in">list</span>(<span class="built_in">range</span>(numNode))</span><br><span class="line">        <span class="comment"># size数组表示以某个节点形成的树包含的节点数</span></span><br><span class="line">        self.size = [<span class="number">1</span>] * numNode</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">union</span>(<span class="params">self, p, q</span>):</span></span><br><span class="line">        <span class="comment"># 找到p所在连通分量（树）的根节点</span></span><br><span class="line">        pRoot = self.find(p)</span><br><span class="line">        qRoot = self.find(q)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># 如果p树的节点比q树多，将q树接在p树的下面</span></span><br><span class="line">        <span class="keyword">if</span> self.size[pRoot] &gt;= self.size[qRoot]:</span><br><span class="line">            self.parent[qRoot] = pRoot</span><br><span class="line">            self.size[pRoot] += self.size[qRoot]</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            self.parent[pRoot] = qRoot</span><br><span class="line">            self.size[qRoot] += self.size[pRoot]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">find</span>(<span class="params">self, p</span>):</span></span><br><span class="line">        <span class="comment"># 寻找p树的根节点</span></span><br><span class="line">        last = p</span><br><span class="line">        <span class="keyword">while</span> self.parent[last] != last:</span><br><span class="line">            last = self.parent[last]</span><br><span class="line">        <span class="keyword">return</span> last</span><br></pre></td></tr></table></figure>
+<p>可以看到Weighted-Union版本的代码只比Quick-Union版本的代码多6行，但是由于小树接在大树规则的限制下，形成的树的高度要降低很多。可以证明其<code>union</code>操作以及<code>find</code>操作的时间复杂度是$O(\log N)$。对数阶的复杂度说明这已经是一个比较实用算法了。</p>
+<p>然而我们还可以进一步缩减树的高度，理想情况下，我们希望树的高度为1，这样的话，<code>find</code>操作就可以以近乎常数时间得到树的根节点。理想情况在我们目前实现的版本中是不可能的，但是如果我们能够在运行的过程中动态地压缩非根节点到根节点的路径的话，是可以进一步降低树的高度的。</p>
+<h2 id="带路径压缩的weighted-union"><a class="header-anchor" href="#带路径压缩的weighted-union">¶</a>带路径压缩的Weighted-Union</h2>
+<p>注意到<code>find</code>的遍历操作，我们遍历了从指定节点到根节点路径上的所有节点，我们最后也得到了根节点。为了下一次遍历的时候不用再重复一遍这条路径。我们直接将这些节点接到根节点的下面。这仅仅需要添加一个循环：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">WeightedUnionWithPathCompression</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self, numNode</span>):</span></span><br><span class="line">        <span class="comment"># 与WeightedUnion相同</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">union</span>(<span class="params">self, p, q</span>):</span></span><br><span class="line">        <span class="comment"># 与WeightedUnion相同</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">find</span>(<span class="params">self, p</span>):</span></span><br><span class="line">        <span class="comment"># 寻找p树的根节点</span></span><br><span class="line">        last = p</span><br><span class="line">        <span class="keyword">while</span> self.parent[last] != last:</span><br><span class="line">            last = self.parent[last]</span><br><span class="line">        root = last</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 再遍历一遍压缩指定节点到根节点路径上所有节点到根节点的路径</span></span><br><span class="line">        last = p</span><br><span class="line">        <span class="keyword">while</span> last != root:</span><br><span class="line">            tempLast = self.parent[last]</span><br><span class="line">            self[last] = root</span><br><span class="line">            last = tempLast</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> root</span><br></pre></td></tr></table></figure>
+<p>可以证明带路径压缩版本的<code>union</code>与<code>find</code>操作的平摊时间复杂度近乎为$O(1)$。</p>
+<h2 id="各种版本的union-find的时间复杂度汇总"><a class="header-anchor" href="#各种版本的union-find的时间复杂度汇总">¶</a>各种版本的Union-Find的时间复杂度汇总</h2>
+<table>
+<thead>
+<tr>
+<th>版本</th>
+<th><code>union</code></th>
+<th><code>find</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Quick-Find</td>
+<td>$O(N)$</td>
+<td>$O(1)$</td>
+</tr>
+<tr>
+<td>Quick-Union</td>
+<td>最坏$O(N)$</td>
+<td>最坏$O(N)$</td>
+</tr>
+<tr>
+<td>Weighted-Union</td>
+<td>$O(\log N)$</td>
+<td>$O(\log N)$</td>
+</tr>
+<tr>
+<td>Weighted-Union with Data Compression</td>
+<td>平摊接近$O(1)$</td>
+<td>平摊接近 $O(1)$</td>
+</tr>
+</tbody>
+</table>
+<h2 id="总结"><a class="header-anchor" href="#总结">¶</a>总结</h2>
+<p>图的动态连通性问题是非常多实际问题的抽象，这里介绍的Union-Find算法将会是解决这一类问题的利器。</p>
+
+    </div>
+
+    
+    
+    
+        
+
+  <div class="followme">
+    <p>欢迎关注我的其它发布渠道</p>
+
+    <div class="social-list">
+
+        <div class="social-item">
+          <a target="_blank" class="social-link" href="/atom.xml">
+            <span class="icon">
+              <i class="fa fa-rss"></i>
+            </span>
+
+            <span class="label">RSS</span>
+          </a>
+        </div>
+    </div>
+  </div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Algorithm/" rel="tag"># Algorithm</a>
+              <a href="/tags/Graph/" rel="tag"># Graph</a>
+              <a href="/tags/Union-Find/" rel="tag"># Union-Find</a>
+              <a href="/tags/Dynamic-Connectivity/" rel="tag"># Dynamic Connectivity</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2018/05/04/configure-gpg-compatible-with-vscode/" rel="prev" title="在Windows中配置兼容于VS Code的GPG签名服务">
+      <i class="fa fa-chevron-left"></i> 在Windows中配置兼容于VS Code的GPG签名服务
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2018/08/21/slow-fast-pointers-for-cycle-detection-in-linked-list/" rel="next" title="快慢指针寻找链表中的环">
+      快慢指针寻找链表中的环 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%AD%E5%BF%83%E6%80%9D%E6%83%B3"><span class="nav-number">1.</span> <span class="nav-text">中心思想</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#quick-find"><span class="nav-number">2.</span> <span class="nav-text">Quick-Find</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#quick-union"><span class="nav-number">3.</span> <span class="nav-text">Quick-Union</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#weighted-union"><span class="nav-number">4.</span> <span class="nav-text">Weighted-Union</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%A6%E8%B7%AF%E5%BE%84%E5%8E%8B%E7%BC%A9%E7%9A%84weighted-union"><span class="nav-number">5.</span> <span class="nav-text">带路径压缩的Weighted-Union</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%84%E7%A7%8D%E7%89%88%E6%9C%AC%E7%9A%84union-find%E7%9A%84%E6%97%B6%E9%97%B4%E5%A4%8D%E6%9D%82%E5%BA%A6%E6%B1%87%E6%80%BB"><span class="nav-number">6.</span> <span class="nav-text">各种版本的Union-Find的时间复杂度汇总</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">41</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">17</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">61</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:bitdqy@hotmail.com" title="E-Mail → mailto:bitdqy@hotmail.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener" target="_blank"><i class="fa fa-fw fa-twitter"></i>Twitter</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">116k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:46</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+</body>
+</html>
