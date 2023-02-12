@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ayase.moe","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.14.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":true,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="在使用国外的代理服务器时，常常会因为各种不稳定因素导致在直连时连接的丢包率特别高。对于一些对丢包率特别敏感的游戏（没错，说的就是舰队Collection），使用丢包率高的线路进行游戏是一件非常痛苦的事情。有的时候，游戏限定某个地区的IP才能够接入（没错，说的还是舰队Collection），所以必须使用架设在那个地区的代理服务器A。这两项加起来就有点麻烦了。但是，如果我们能够找到一个中继服务器B，从">
+<meta property="og:type" content="article">
+<meta property="og:title" content="利用Haproxy进行SS代理中继">
+<meta property="og:url" content="https://ayase.moe/2017/02/01/haproxy-in-proxy-relay/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="在使用国外的代理服务器时，常常会因为各种不稳定因素导致在直连时连接的丢包率特别高。对于一些对丢包率特别敏感的游戏（没错，说的就是舰队Collection），使用丢包率高的线路进行游戏是一件非常痛苦的事情。有的时候，游戏限定某个地区的IP才能够接入（没错，说的还是舰队Collection），所以必须使用架设在那个地区的代理服务器A。这两项加起来就有点麻烦了。但是，如果我们能够找到一个中继服务器B，从">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2017-02-01T07:46:07.000Z">
+<meta property="article:modified_time" content="2023-02-12T16:58:41.256Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="Haproxy">
+<meta property="article:tag" content="Proxy Relay">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://ayase.moe/2017/02/01/haproxy-in-proxy-relay/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ayase.moe/2017/02/01/haproxy-in-proxy-relay/","path":"2017/02/01/haproxy-in-proxy-relay/","title":"利用Haproxy进行SS代理中继"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>利用Haproxy进行SS代理中继 | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-85059083-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Ayase-252's wonderland</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E6%AD%A5%E9%AA%A4"><span class="nav-number">1.</span> <span class="nav-text">基本步骤</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%89%E8%A3%85haproxy"><span class="nav-number">1.1.</span> <span class="nav-text">安装Haproxy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%85%8D%E7%BD%AEhaproxy"><span class="nav-number">1.2.</span> <span class="nav-text">配置Haproxy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AF%E5%8A%A8haproxy"><span class="nav-number">1.3.</span> <span class="nav-text">启动Haproxy</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%BE%E7%BD%AE%E6%9C%AC%E5%9C%B0%E5%AE%A2%E6%88%B7%E7%AB%AF"><span class="nav-number">1.4.</span> <span class="nav-text">设置本地客户端</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">3.</span> <span class="nav-text">参考资料</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E6%97%A5%E5%BF%97"><span class="nav-number">4.</span> <span class="nav-text">修改日志</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:i@ayase-lab.com" title="E-Mail → mailto:i@ayase-lab.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener me" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2017/02/01/haproxy-in-proxy-relay/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="利用Haproxy进行SS代理中继 | Ayase-252's wonderland">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          利用Haproxy进行SS代理中继
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2017-02-01 15:46:07" itemprop="dateCreated datePublished" datetime="2017-02-01T15:46:07+08:00">2017-02-01</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-02-13 00:58:41" itemprop="dateModified" datetime="2023-02-13T00:58:41+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Tutorial/" itemprop="url" rel="index"><span itemprop="name">Tutorial</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>1.4k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>1 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>在使用国外的代理服务器时，常常会因为各种不稳定因素导致在直连时连接的丢包率特别高。对于一些对丢包率特别敏感的游戏（没错，说的就是舰队Collection），使用丢包率高的线路进行游戏是一件非常痛苦的事情。有的时候，游戏限定某个地区的IP才能够接入（没错，说的还是舰队Collection），所以必须使用架设在那个地区的代理服务器A。这两项加起来就有点麻烦了。但是，如果我们能够找到一个中继服务器B，从本地直连到中继服务器B的丢包率非常低，而从中继服务器B到目标服务器A的丢包率也非常低，这样我们就能够形成一条丢包率较低的线路。这样一条线路有效地提升了那些丢包率敏感的游戏体验。</p>
+<pre><code>本地&lt;-&gt;中继服务器B&lt;-&gt;代理服务器A
+</code></pre>
+<p>在这里，我们在中继服务器B上使用<code>Haproxy</code>将请求转发到目标服务器A上。注意<code>Haproxy</code>只支持TCP连接的转发。</p>
+<span id="more"></span>
+<h2 id="基本步骤"><a class="header-anchor" href="#基本步骤">¶</a>基本步骤</h2>
+<h3 id="安装haproxy"><a class="header-anchor" href="#安装haproxy">¶</a>安装Haproxy</h3>
+<p>Debian/Ubuntu</p>
+<pre><code>sudo apt-get -y install haproxy
+</code></pre>
+<h3 id="配置haproxy"><a class="header-anchor" href="#配置haproxy">¶</a>配置Haproxy</h3>
+<p>使用文本编辑软件打开<code>/etc/haproxy/haproxy.conf</code>，注意提供管理员权限，用以下内容替换原来的内容：</p>
+<pre><code>global
+    ulimit-n  51200
+
+defaults
+	log	global
+	mode	tcp
+	option	dontlognull
+        timeout connect 5000
+        timeout client  50000
+        timeout server  50000
+
+frontend ss-in
+    bind *:relay_server_port
+    default_backend ss-out
+
+backend ss-out
+    server server1 proxy_server_ip:proxy_server_port maxconn 20480
+</code></pre>
+<p>指定一个端口为<code>relay_server_port</code>，如<code>8100</code>等，这个端口将会之后用于<strong>本地与中继服务器B</strong>的连接。将<code>proxy_server_ip</code>替换为被中继的<strong>代理服务器A</strong>的IP地址，<code>proxy_server_port</code>设置为被中继的<strong>代理服务器B</strong>的监听端口。</p>
+<h3 id="启动haproxy"><a class="header-anchor" href="#启动haproxy">¶</a>启动Haproxy</h3>
+<p>运行
+sudo /etc/init.d/haproxy start</p>
+<h3 id="设置本地客户端"><a class="header-anchor" href="#设置本地客户端">¶</a>设置本地客户端</h3>
+<p>命令行
+sslocal -s relay_server_ip -p relay_server_port -l local_port -k password -m encryption_method</p>
+<p>其中<code>relay_server_ip</code>是中继服务器B的IP，<code>relay_server_port</code>是上文提到的中继服务器转发的端口，<code>password</code>与<code>encryption_method</code>分别为访问代理服务器的密码与加密方法，与之前的设置相同。</p>
+<h2 id="原理"><a class="header-anchor" href="#原理">¶</a>原理</h2>
+<p><code>Haproxy</code>是一款HTTP/TCP负载均衡器，核心功能就是将前端的大流量请求，分流到后端的各个服务器中。原理与我们要实现的代理中继非常类似。<code>Haproxy</code>监听特定端口的请求，然后将这个请求转发到后台的某一台服务器的端口上。这里<code>Haproxy</code>监听的端口就是设置的中继服务器的端口，“后台服务器”就是我们原来的SS代理服务器。</p>
+<h2 id="参考资料"><a class="header-anchor" href="#参考资料">¶</a>参考资料</h2>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://doub.io/ss-jc29/" title="Shadowsocks利用 HaProxy 实现中继(中转/端口转发)">Shadowsocks利用 HaProxy 实现中继(中转/端口转发)</a></li>
+<li><a target="_blank" rel="noopener" href="http://kaywu.xyz/2016/06/19/Shadowsocks-HAProxy/" title="使用 HAProxy 加速 Shadowsocks">使用 HAProxy 加速 Shadowsocks</a></li>
+</ol>
+<h2 id="修改日志"><a class="header-anchor" href="#修改日志">¶</a>修改日志</h2>
+<p>2017/11/9 修正启动Haproxy的命令</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Qingyu Deng
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ayase.moe/2017/02/01/haproxy-in-proxy-relay/" title="利用Haproxy进行SS代理中继">https://ayase.moe/2017/02/01/haproxy-in-proxy-relay/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Haproxy/" rel="tag"># Haproxy</a>
+              <a href="/tags/Proxy-Relay/" rel="tag"># Proxy Relay</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2017/01/29/typescript-note-1/" rel="prev" title="TypeScript初探（I）">
+                  <i class="fa fa-chevron-left"></i> TypeScript初探（I）
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2017/03/11/proxy-setting-of-apm/" rel="next" title="设置Atom的包管理器——apm的代理">
+                  设置Atom的包管理器——apm的代理 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">127k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:55</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Ayase-252/Ayase-252.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

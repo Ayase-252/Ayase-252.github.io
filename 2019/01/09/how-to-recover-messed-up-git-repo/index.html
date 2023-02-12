@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ayase.moe","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.14.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":true,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="1 月的北京风和日丽。我做好了一个需求，估摸着该提 PR 合并到主仓库了。 于是，我准备和主仓库master分支rebase一下，然后整理一下 commit 记录。临近下班了， 又要面对一天中最困难的问题——晚上吃什么？楼下那家 KFC 的菜单已经吃完一轮了。 突然之间，我隐隐感觉有一点不太对劲。一看git log。Oh shit!!">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何拯救坏掉的Git Repository——记一次git“事故”">
+<meta property="og:url" content="https://ayase.moe/2019/01/09/how-to-recover-messed-up-git-repo/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="1 月的北京风和日丽。我做好了一个需求，估摸着该提 PR 合并到主仓库了。 于是，我准备和主仓库master分支rebase一下，然后整理一下 commit 记录。临近下班了， 又要面对一天中最困难的问题——晚上吃什么？楼下那家 KFC 的菜单已经吃完一轮了。 突然之间，我隐隐感觉有一点不太对劲。一看git log。Oh shit!!">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-01-09T16:01:19.000Z">
+<meta property="article:modified_time" content="2023-02-12T16:58:41.264Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="Git">
+<meta property="article:tag" content="版本控制">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://ayase.moe/2019/01/09/how-to-recover-messed-up-git-repo/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ayase.moe/2019/01/09/how-to-recover-messed-up-git-repo/","path":"2019/01/09/how-to-recover-messed-up-git-repo/","title":"如何拯救坏掉的Git Repository——记一次git“事故”"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>如何拯救坏掉的Git Repository——记一次git“事故” | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-85059083-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Ayase-252's wonderland</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%88%91-tm-rebase-%E5%8F%8D%E4%BA%86"><span class="nav-number">1.</span> <span class="nav-text">我 TM rebase 反了</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%88%86%E6%9E%90-commit-%E5%8E%86%E5%8F%B2"><span class="nav-number">2.</span> <span class="nav-text">分析 commit 历史</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%8B%E6%9C%AF%E8%BF%87%E7%A8%8B"><span class="nav-number">3.</span> <span class="nav-text">手术过程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%90%8E%E8%AE%B0"><span class="nav-number">4.</span> <span class="nav-text">后记</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:i@ayase-lab.com" title="E-Mail → mailto:i@ayase-lab.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener me" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2019/01/09/how-to-recover-messed-up-git-repo/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="如何拯救坏掉的Git Repository——记一次git“事故” | Ayase-252's wonderland">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          如何拯救坏掉的Git Repository——记一次git“事故”
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-01-10 00:01:19" itemprop="dateCreated datePublished" datetime="2019-01-10T00:01:19+08:00">2019-01-10</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-02-13 00:58:41" itemprop="dateModified" datetime="2023-02-13T00:58:41+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Programming/" itemprop="url" rel="index"><span itemprop="name">Programming</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>2 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>1 月的北京风和日丽。我做好了一个需求，估摸着该提 PR 合并到主仓库了。
+于是，我准备和主仓库<code>master</code>分支<code>rebase</code>一下，然后整理一下 commit 记录。临近下班了，
+又要面对一天中最困难的问题——晚上吃什么？楼下那家 KFC 的菜单已经吃完一轮了。
+突然之间，我隐隐感觉有一点不太对劲。一看<code>git log</code>。Oh shit!!</p>
+<span id="more"></span>
+<h2 id="我-tm-rebase-反了"><a class="header-anchor" href="#我-tm-rebase-反了">¶</a>我 TM rebase 反了</h2>
+<p>我惊出了一身冷汗，瞬间没心思考虑晚饭问题了。看了一眼本地<code>master</code>分支，
+最后一条 commit 记录的 SHA 和远程<code>master</code>最后一条 commit 的 SHA 不一样。诶？
+远程仓库的 merge commit 全不见了。然后一看我刚刚敲的命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">git checkout master</span><br><span class="line">git pull upstream master</span><br><span class="line">git rebase feature</span><br><span class="line"></span><br><span class="line">git checkout feature</span><br><span class="line">git rebase master</span><br></pre></td></tr></table></figure>
+<p>Oh, shit!我在干什么？我以前听说过搞乱 Git 仓库是很麻烦的问题。此时无数想法从脑中闪过：
+难道 feature 要重写吗？好几百行啊，而且 feature 已经快到 deadline 了。我慌了，真的慌了。
+还是先喝口水冷静下来吧。</p>
+<p>冷静下来之后，我想我为了面试看过一点点 Git 的基本原理。从原理入手，
+一点点小心地修正记录的话应该是可以修好的。此时最重要的是理解现在仓库的历史。Don’t Panic。</p>
+<h2 id="分析-commit-历史"><a class="header-anchor" href="#分析-commit-历史">¶</a>分析 commit 历史</h2>
+<p>在这个项目中，生产代码单独是一个 repo。开发的时候，开发者<code>fork</code>生产代码的 repo，
+然后<code>clone</code>自己<code>fork</code>的 repo。在本地，按照惯例，我自己<code>fork</code>的 repo 是<code>origin</code>，
+远程生产代码的 repo 是<code>upstream</code>。开发新功能的时候，我从本地的<code>master</code>分支
+<code>checkout</code>一个特性分支<code>feature</code>。在开发了几天之后，远程生产代码已经合并了数个 PR。
+在我的愚蠢操作之前，整个项目的分支情况是下面这样的：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">  C5---C6---C7---C8 feature</span><br><span class="line">  /</span><br><span class="line">C1--C2--M2--C3--M3 upstream/master</span><br><span class="line">|</span><br><span class="line">origin/master</span><br><span class="line">master</span><br></pre></td></tr></table></figure>
+<p>其中<code>Mx</code>是 merge commit。在愚蠢的操作之后，由于<code>rebase</code>默认丢弃掉将要<code>rebase</code>分支的
+merge commit，项目的分支情况变成了：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">                        C5&#x27;--C6&#x27;--C7&#x27;--C8&#x27; feature</span><br><span class="line">                      /</span><br><span class="line">                C2&#x27;--C3&#x27; master</span><br><span class="line">                /</span><br><span class="line">origin/master C1--C2--M2--C3--M3 upstream/master</span><br></pre></td></tr></table></figure>
+<p>知道病因之后，似乎还有救的样子。首先，我们可以在<code>feature</code>分支中以<code>C1</code>为起点、
+剔除掉<code>C2'</code>、<code>C3'</code>。这样，<code>feature</code>就恢复了之前的状态。然后，
+我们将<code>master</code>分支回退到<code>origin/master</code>。这样，<code>master</code>分支也恢复了。
+最后做一遍正常的<code>rebase</code>操作应该就行了。未来实现这个方案，
+我们可以使用两把非常好用的“手术刀”——<code>reset</code>、还有<code>rebase</code>本身，在这个情况下可以使用。</p>
+<h2 id="手术过程"><a class="header-anchor" href="#手术过程">¶</a>手术过程</h2>
+<p>首先我们做第一步，以某个 commit 为起点，剔除掉一些 commit，
+我们可以使用<code>git rebase -i start_commit_sha</code>命令。<code>-i</code>参数表示<code>interactive</code>。
+执行之后，git 会调用一个文本编辑器打开一个文件，
+里面的内容是从起点之后的第一个 commit 到最后一个 commit 的所有 commit。commit 可以被更改、
+压缩(squash/fix up)、删除。要删除某个 commit，只需要在编辑器中把该行删掉即可。
+保存退出之后，git 会根据这个文件的内容进行<code>rebase</code>操作。</p>
+<p>删掉<code>C2'</code>、<code>C3'</code>之后，项目结构变成：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">                C2&#x27;--C3&#x27; master</span><br><span class="line">                /</span><br><span class="line">origin/master C1--C2--M2--C3--M3 upstream/master</span><br><span class="line">                \</span><br><span class="line">                C5--C6--C7--C8 feature</span><br></pre></td></tr></table></figure>
+<p>然后，<strong>在<code>master</code>分支</strong>中使用<code>git reset --hard commit_sha</code>。
+这个命令的语义是将<em>HEAD</em>（分支的指针）、工作目录、暂存区重置到<code>commit_sha</code>指向的 commit。
+这里<a target="_blank" rel="noopener" href="https://git-scm.com/book/zh/v2/Git-%E5%B7%A5%E5%85%B7-%E9%87%8D%E7%BD%AE%E6%8F%AD%E5%AF%86">官方文档</a>解释得很清楚。</p>
+<p>此时项目结构变为：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">              master</span><br><span class="line">              |</span><br><span class="line">origin/master C1--C2--M2--C3--M3 upstream/master</span><br><span class="line">                \</span><br><span class="line">                C5--C6--C7--C8 feature</span><br></pre></td></tr></table></figure>
+<p>和没经过愚蠢操作的项目结构是一样的。此时只要来一遍正常操作就行了。</p>
+<h2 id="后记"><a class="header-anchor" href="#后记">¶</a>后记</h2>
+<p>解决 git 仓库被意外破坏的问题，最重要的是<strong>要冷静</strong>。只有冷静下来，
+才能够准确地分析出现在 git 仓库的状况。然后看情况使用对应的工具操作。
+git 其实内置了很强大的对 commit 历史进行操作的工具，所以大多数的 git 操作失误是不用重写的。</p>
+<p>当然，最重要的是<strong>操作 git 仓库的时候要专心</strong>。敲命令真的很容易错的 orz。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Qingyu Deng
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ayase.moe/2019/01/09/how-to-recover-messed-up-git-repo/" title="如何拯救坏掉的Git Repository——记一次git“事故”">https://ayase.moe/2019/01/09/how-to-recover-messed-up-git-repo/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Git/" rel="tag"># Git</a>
+              <a href="/tags/%E7%89%88%E6%9C%AC%E6%8E%A7%E5%88%B6/" rel="tag"># 版本控制</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/12/31/annual-reflection-2018/" rel="prev" title="2018年终总结">
+                  <i class="fa fa-chevron-left"></i> 2018年终总结
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/10/13/faster-repeat-algorithm/" rel="next" title="更快的字符串复制方法">
+                  更快的字符串复制方法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">127k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:55</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Ayase-252/Ayase-252.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

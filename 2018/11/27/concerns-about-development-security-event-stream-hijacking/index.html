@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ayase.moe","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.14.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":true,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="在开发Web应用时，如果我们的需求缺少一个不那么简单而又不想亲自动手写的工具时，我们会向Google老师求助，看到一个npm包恰好能够满足，然后npm install package一把梭，require解决问题。完美的工作流，体现了JavaScript社区的开放与强大。但是，最近一个月下载量达百万的包event-stream被注入了恶意代码。恶意代码会尝试劫持另外一个包中的bitcore-wal">
+<meta property="og:type" content="article">
+<meta property="og:title" content="重新审视Web开发安全：event-stream注入恶意代码">
+<meta property="og:url" content="https://ayase.moe/2018/11/27/concerns-about-development-security-event-stream-hijacking/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="在开发Web应用时，如果我们的需求缺少一个不那么简单而又不想亲自动手写的工具时，我们会向Google老师求助，看到一个npm包恰好能够满足，然后npm install package一把梭，require解决问题。完美的工作流，体现了JavaScript社区的开放与强大。但是，最近一个月下载量达百万的包event-stream被注入了恶意代码。恶意代码会尝试劫持另外一个包中的bitcore-wal">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ayase.moe/2018/11/27/concerns-about-development-security-event-stream-hijacking/vulnerability-check.png">
+<meta property="article:published_time" content="2018-11-27T14:19:51.000Z">
+<meta property="article:modified_time" content="2023-02-12T16:58:41.256Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="JavaScript">
+<meta property="article:tag" content="Web Development Security">
+<meta property="article:tag" content="Cyber Security">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ayase.moe/2018/11/27/concerns-about-development-security-event-stream-hijacking/vulnerability-check.png">
+
+
+<link rel="canonical" href="https://ayase.moe/2018/11/27/concerns-about-development-security-event-stream-hijacking/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ayase.moe/2018/11/27/concerns-about-development-security-event-stream-hijacking/","path":"2018/11/27/concerns-about-development-security-event-stream-hijacking/","title":"重新审视Web开发安全：event-stream注入恶意代码"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>重新审视Web开发安全：event-stream注入恶意代码 | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-85059083-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Ayase-252's wonderland</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E5%85%A8%E5%BB%BA%E8%AE%AE"><span class="nav-number">1.</span> <span class="nav-text">安全建议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%94%BB%E5%87%BB%E5%8E%9F%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">攻击原理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%87%8D%E6%96%B0%E5%AE%A1%E8%A7%86%E5%BC%80%E5%8F%91%E5%AE%89%E5%85%A8"><span class="nav-number">3.</span> <span class="nav-text">重新审视开发安全</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E5%8F%AF%E8%83%BD%E7%9A%84%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="nav-number">4.</span> <span class="nav-text">一个可能的解决方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%AB%A0"><span class="nav-number">5.</span> <span class="nav-text">参考文章</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:i@ayase-lab.com" title="E-Mail → mailto:i@ayase-lab.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener me" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2018/11/27/concerns-about-development-security-event-stream-hijacking/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="重新审视Web开发安全：event-stream注入恶意代码 | Ayase-252's wonderland">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          重新审视Web开发安全：event-stream注入恶意代码
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-11-27 22:19:51" itemprop="dateCreated datePublished" datetime="2018-11-27T22:19:51+08:00">2018-11-27</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-02-13 00:58:41" itemprop="dateModified" datetime="2023-02-13T00:58:41+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Technology/" itemprop="url" rel="index"><span itemprop="name">Technology</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.3k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>2 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>在开发Web应用时，如果我们的需求缺少一个不那么简单而又不想亲自动手写的工具时，我们会向Google老师求助，看到一个<code>npm</code>包恰好能够满足，然后<code>npm install package</code>一把梭，<code>require</code>解决问题。完美的工作流，体现了JavaScript社区的开放与强大。但是，最近一个月下载量达百万的包<code>event-stream</code>被注入了恶意代码。恶意代码会尝试劫持另外一个包中的<code>bitcore-wallet-client.getKeyFunc</code>方法。如果一个项目同时依赖了<code>event-stream</code>与<code>copay-dash</code>，当<code>bitcore-wallent-client</code>中的<code>getKeyFunc</code>运行时，恶意代码会检查钱包的id，持有比特币BTC的数量以及比特币现金BCH的数量。如果BTC数量大于100或者BCH数量大于1000，就将钱包的公钥发给一个地址。</p>
+<p>当我看到这个新闻的时候，我心里想，我没写过写区块链相关的对象，应该不会被影响到吧。但是当我没事跑一下检查方法时，结果却傻眼了：</p>
+<p><img src="/2018/11/27/concerns-about-development-security-event-stream-hijacking/vulnerability-check.png" alt="检查结果"></p>
+<p>我中招了！</p>
+<span id="more"></span>
+<h2 id="安全建议"><a class="header-anchor" href="#安全建议">¶</a>安全建议</h2>
+<p>我中招是因为<code>vue-cli</code>间接依赖了受影响<code>event-stream@3.3.6</code>。目前<code>vue-cli</code>已经更新了版本将<code>event-stream</code>锁定在了未受影响的<code>3.3.4</code>。如果有向我一样中招的朋友，请尽快升级<code>vue-cli</code>。</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 全局安装时</span></span><br><span class="line">npm update vue-cli -g</span><br></pre></td></tr></table></figure>
+<p>如果没有安装过<code>vue-cli</code>，也要检查一下是否有项目简介依赖了<code>event-stream@3.3.6</code>。方法如下：</p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 全局层面</span></span><br><span class="line">npm <span class="built_in">ls</span> event-stream flatmap-stream -g</span><br><span class="line"></span><br><span class="line"><span class="comment"># 项目层面</span></span><br><span class="line">npm <span class="built_in">ls</span> event-stream flatmap-stream</span><br></pre></td></tr></table></figure>
+<h2 id="攻击原理"><a class="header-anchor" href="#攻击原理">¶</a>攻击原理</h2>
+<p>太简单了，假如我们有一个正常的包<code>good.js</code>是这么写的：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">module</span>.<span class="property">exports</span>.<span class="property">goodFunc</span> = <span class="function">() =&gt;</span> <span class="string">&#x27;good&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>然后我们有一个包含恶意的包<code>malicious.js</code>：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> good = <span class="built_in">require</span>(<span class="string">&#x27;./good&#x27;</span>)</span><br><span class="line"></span><br><span class="line">good.<span class="property">goodFunc</span> = <span class="function">() =&gt;</span> <span class="string">&#x27;hijacked&#x27;</span></span><br><span class="line"><span class="variable language_">module</span>.<span class="property">exports</span>.<span class="property">usefulFunc</span> = <span class="function">() =&gt;</span> <span class="string">&#x27;a useful function in malicious code&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>当我们的项目同时依赖两个包的时候：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// index.js</span></span><br><span class="line"><span class="keyword">const</span> good = <span class="built_in">require</span>(<span class="string">&#x27;./good&#x27;</span>)</span><br><span class="line"><span class="keyword">const</span> malicious = <span class="built_in">require</span>(<span class="string">&#x27;./malicious&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(good.<span class="title function_">goodFunc</span>())  <span class="comment">// hijacked</span></span><br></pre></td></tr></table></figure>
+<p>简单到不可思议吧，比起别的程序深入汇编挖漏洞。JavaScript只需要，从一个不知道干什么的包里<code>require</code>被攻击的包，然后修改一下就行。这里<code>event-stream</code>干了很容易被发现的通过网络发送数据，如果其他攻击不是那么容易被发现呢？我们项目里动辄上千的依赖，我们能够保证它们都是善良的天使吗？I don’t know…</p>
+<h2 id="重新审视开发安全"><a class="header-anchor" href="#重新审视开发安全">¶</a>重新审视开发安全</h2>
+<p>Web开发者整天与不安全的网络、不可信任的输入等打交道。Web安全对于开发者而言，似乎就是保证用户的信息安全。我们会使用很多技术来保证用户的安全，像HTTPS，CSRF防御等等。</p>
+<p>但是…对于开发者本身呢？Node.js的模块机制提供的保护是0。它只能够保证第一次<code>require</code>的时候代码是包作者提供的。接下来轮到我们的代码<code>require</code>的时候，说实话，我们不能保证我们调用的函数是李逵还是“李鬼”。JavaScript语言层面提供的保护…近乎为0。能够阻止修改我们<code>exports</code>出去的对象的方法只有一个，<code>Object.defineProperty(module.exports, 'myMethod', &#123; writable: false &#125;)</code>。那么长，还只能锁住一个方法，一般库的作者是不会写的。</p>
+<p>现在我们使用这些包，就像使用C++的未定义行为一样。有时它确实有用，但是可能不是像你想象中的一样作用的。也许哪一天，一个包给<code>Object.create</code>注入新行为，当执行这个函数时删除项目文件夹，也说不定。。</p>
+<p>目前JavaScript社区是靠人来解决这一事情的，默认信任大牛、高Star的包。但是这些“高信任度”的包引入的依赖呢？巨量的基础包依赖，像<code>is-odd</code>（判断一个数是不是奇数。很简单是吧？这个包每周下载量达1百万次哦）这些，使得我们根本不可能去检查项目中的每一个依赖。当其中一个依赖出现问题的时候，我们每个人都是潜在的受害者。</p>
+<p>综上所述，<code>Node.js</code>不严格的模块机制、过于灵活的JavaScript以及项目中巨量的包依赖已经对开发安全形成了威胁。我们需要一个解决方案<strong>保证</strong>我们调用的函数就是作者写的函数。</p>
+<h2 id="一个可能的解决方案"><a class="header-anchor" href="#一个可能的解决方案">¶</a>一个可能的解决方案</h2>
+<p>既然现有机制无法保证包在<code>export</code>出去之后其<strong>公共接口</strong>不受改变。那么包的开发者应该承担起这一责任，无论是通过<code>Object.defineProperty</code>去设定公共接口不可写或什么其他的方法。这里我写了一个<a target="_blank" rel="noopener" href="https://github.com/Ayase-252/exports-lock">exports-lock</a>，能够通过递归地设置<code>module.exports</code>的属性为不可写(<code>writable: false</code>)、不可配置(<code>configurable: false</code>)。保证公共接口在<code>export</code>之后不受篡改。</p>
+<p>（可能暴力了点，可以改良。。。）</p>
+<h2 id="参考文章"><a class="header-anchor" href="#参考文章">¶</a>参考文章</h2>
+<p>1.<a target="_blank" rel="noopener" href="https://github.com/dominictarr/event-stream/issues/116">I don’t know what to say.</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Qingyu Deng
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ayase.moe/2018/11/27/concerns-about-development-security-event-stream-hijacking/" title="重新审视Web开发安全：event-stream注入恶意代码">https://ayase.moe/2018/11/27/concerns-about-development-security-event-stream-hijacking/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/JavaScript/" rel="tag"># JavaScript</a>
+              <a href="/tags/Web-Development-Security/" rel="tag"># Web Development Security</a>
+              <a href="/tags/Cyber-Security/" rel="tag"># Cyber Security</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/11/26/why-not-use-common-middleware-in-koa2/" rel="prev" title="Koa2中为什么不要使用普通中间件">
+                  <i class="fa fa-chevron-left"></i> Koa2中为什么不要使用普通中间件
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/12/02/everyone-creator/" rel="next" title="Everyone, Creator">
+                  Everyone, Creator <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">127k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:55</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Ayase-252/Ayase-252.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ayase.moe","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.14.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":true,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="李华结束了一天的工作，过于劳累不想坐几个小时的地铁回家。李华打开了滴滴， 输入家的位置开始打车。 ——「预估 40.5 元」 「哎」，李华轻叹了一声，放下手机，拖着疲惫的身体，缓缓向附近的地铁站走去。 经济关乎着我们每一个的生活。前几天，我在 v2ex 上看到一些关于房产税的讨论， 「如果国家决定征收房产税，对于房屋租金会如何改变？」， 不论立场而言，是一个很有趣的经济学问题。 答案也很简单，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="人人都能懂的经济学：征收房产税的时候租金会如何变化">
+<meta property="og:url" content="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="李华结束了一天的工作，过于劳累不想坐几个小时的地铁回家。李华打开了滴滴， 输入家的位置开始打车。 ——「预估 40.5 元」 「哎」，李华轻叹了一声，放下手机，拖着疲惫的身体，缓缓向附近的地铁站走去。 经济关乎着我们每一个的生活。前几天，我在 v2ex 上看到一些关于房产税的讨论， 「如果国家决定征收房产税，对于房屋租金会如何改变？」， 不论立场而言，是一个很有趣的经济学问题。 答案也很简单，">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/supply.png">
+<meta property="og:image" content="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/demand.png">
+<meta property="og:image" content="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/equilibrium.png">
+<meta property="og:image" content="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/smoothed-sd-curve.png">
+<meta property="og:image" content="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/price-elasticity.png">
+<meta property="og:image" content="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/example-ds-curve.png">
+<meta property="og:image" content="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/price-change-tax-on-demand.png">
+<meta property="og:image" content="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/price-change-tax-on-supply.png">
+<meta property="og:image" content="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/tax-incidence-relate-to-elasticity.png">
+<meta property="article:published_time" content="2021-03-06T16:43:44.000Z">
+<meta property="article:modified_time" content="2023-02-12T16:58:41.256Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="经济">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/supply.png">
+
+
+<link rel="canonical" href="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/","path":"2021/03/06/how-the-price-change-when-xxx/","title":"人人都能懂的经济学：征收房产税的时候租金会如何变化"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>人人都能懂的经济学：征收房产税的时候租金会如何变化 | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-85059083-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Ayase-252's wonderland</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%B7%E6%A0%BC%E7%9A%84%E5%86%B3%E5%AE%9A%E5%9B%A0%E7%B4%A0"><span class="nav-number">1.</span> <span class="nav-text">价格的决定因素</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%B7%E6%A0%BC%E5%BC%B9%E6%80%A7"><span class="nav-number">2.</span> <span class="nav-text">价格弹性</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%A8%8E%E8%B5%8B"><span class="nav-number">3.</span> <span class="nav-text">税赋</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BB%A5%E6%89%8B%E6%8A%93%E9%A5%BC%E4%B8%BA%E4%BE%8B"><span class="nav-number">3.1.</span> <span class="nav-text">以手抓饼为例</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E9%9C%80%E6%B1%82%E4%BE%A7%E5%BE%81%E7%A8%8E"><span class="nav-number">3.2.</span> <span class="nav-text">在需求侧征税</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9C%A8%E4%BE%9B%E7%BB%99%E4%BE%A7%E5%BE%81%E7%A8%8E"><span class="nav-number">3.3.</span> <span class="nav-text">在供给侧征税</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E5%86%B3%E5%AE%9A%E4%BA%86%E7%A8%8E%E8%B4%9F%E5%BD%92%E5%AE%BF"><span class="nav-number">4.</span> <span class="nav-text">什么决定了税负归宿</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%88%BF%E4%BA%A7%E7%A8%8E%E5%AF%B9%E7%A7%9F%E9%87%91%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">5.</span> <span class="nav-text">房产税对租金的影响</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%A7%9F%E5%AE%A2%E4%BE%A7%E7%9A%84%E4%BB%B7%E6%A0%BC%E5%BC%B9%E6%80%A7"><span class="nav-number">5.1.</span> <span class="nav-text">租客侧的价格弹性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%88%BF%E4%B8%9C%E4%BE%A7%E7%9A%84%E4%BB%B7%E6%A0%BC%E5%BC%B9%E6%80%A7"><span class="nav-number">5.2.</span> <span class="nav-text">房东侧的价格弹性</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BB%93%E8%AE%BA"><span class="nav-number">6.</span> <span class="nav-text">结论</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E6%96%87%E7%8C%AE"><span class="nav-number">7.</span> <span class="nav-text">参考文献</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B3%A8%E9%87%8A"><span class="nav-number">8.</span> <span class="nav-text">注释</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:i@ayase-lab.com" title="E-Mail → mailto:i@ayase-lab.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener me" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="人人都能懂的经济学：征收房产税的时候租金会如何变化 | Ayase-252's wonderland">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          人人都能懂的经济学：征收房产税的时候租金会如何变化
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021-03-07 00:43:44" itemprop="dateCreated datePublished" datetime="2021-03-07T00:43:44+08:00">2021-03-07</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-02-13 00:58:41" itemprop="dateModified" datetime="2023-02-13T00:58:41+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%9D%82%E8%B0%88/" itemprop="url" rel="index"><span itemprop="name">杂谈</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.1k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>5 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>李华结束了一天的工作，过于劳累不想坐几个小时的地铁回家。李华打开了滴滴，
+输入家的位置开始打车。</p>
+<p>——「预估 40.5 元」</p>
+<p>「哎」，李华轻叹了一声，放下手机，拖着疲惫的身体，缓缓向附近的地铁站走去。</p>
+<p>经济关乎着我们每一个的生活。前几天，我在 v2ex
+上看到<a target="_blank" rel="noopener" href="https://www.v2ex.com/t/758303">一些关于房产税的讨论</a>，
+「如果国家决定征收房产税，对于房屋租金会如何改变？」，
+不论立场而言，是一个很有趣的经济学问题。
+答案也很简单，</p>
+<blockquote>
+<p>tl;dr; 租金会稍微上涨，但是房产税的负担不会完全落到租客头上。</p>
+</blockquote>
+<span id="more"></span>
+<h2 id="价格的决定因素"><a class="header-anchor" href="#价格的决定因素">¶</a>价格的决定因素</h2>
+<p>在研究租金问题之前，我们首先需要了解「价格是如何形成的？」 。</p>
+<p>为了解释这个问题，我们假设有这样一个小区，其中有五个房东 A, B, C, D, E。
+每一个房东都有一间房屋等待出租。每一个房东对于待出租的房屋有一个<strong>心理价位</strong>，
+只要租客出价<strong>不小于</strong>这个心理价位，房东就愿意将待出租的房屋租给租客。</p>
+<p>假设，每个房东的心理价位如下：</p>
+<table>
+<thead>
+<tr>
+<th>房东</th>
+<th>心理价位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>1000</td>
+</tr>
+<tr>
+<td>B</td>
+<td>1100</td>
+</tr>
+<tr>
+<td>C</td>
+<td>1300</td>
+</tr>
+<tr>
+<td>D</td>
+<td>1400</td>
+</tr>
+<tr>
+<td>E</td>
+<td>1500</td>
+</tr>
+</tbody>
+</table>
+<p>为了把 5 个房东的心理价位聚合起来，我们以 $y$ 轴为<strong>房租价格</strong>，
+$x$ 轴为<strong>可出租房屋数量</strong>，绘制一张曲线图。</p>
+<p><img src="/2021/03/06/how-the-price-change-when-xxx/./supply.png" alt="供给曲线"></p>
+<p>从曲线中，我们可以看到，如果我们愿意付出 1200 元租一间房屋，
+此时小区中可以有 2 间房屋可以选择。这条曲线，刻画了市场上单一商品
+（这个例子中是出租屋）上的供给情况，因此这条曲线，
+也被称为<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Supply_(economics)"><em>供给曲线（Supply Curve）</em></a>。</p>
+<p>由于人性，供给曲线的斜率一定是大于等于 0 （为什么？）。</p>
+<p>在同时，有五位打工人 I、J、K、L、M 准备在这个小区租房，
+他们每一个人也有一个<strong>心理价位</strong>。当房屋租金<strong>不高于</strong>这个心理价位，
+他们就会花钱租下这个房屋。</p>
+<table>
+<thead>
+<tr>
+<th>租客</th>
+<th>心理价位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>I</td>
+<td>1400</td>
+</tr>
+<tr>
+<td>J</td>
+<td>1300</td>
+</tr>
+<tr>
+<td>K</td>
+<td>1200</td>
+</tr>
+<tr>
+<td>L</td>
+<td>1000</td>
+</tr>
+<tr>
+<td>M</td>
+<td>900</td>
+</tr>
+</tbody>
+</table>
+<p>借鉴供给曲线，我们可以通过曲线的方式，把所有打工人的心理价位聚合起来。</p>
+<p><img src="/2021/03/06/how-the-price-change-when-xxx/./demand.png" alt="需求曲线"></p>
+<p>曲线中每一点$(x, y)$，表示当房租为 $y$ 时，会有 $x$ 间房屋出租出去。
+这条曲线被称为<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Demand_curve"><em>需求曲线(Demand Curve)</em></a>。</p>
+<p>同样由于人性，需求曲线的斜率一定会小于等于 0 （为什么？）。</p>
+<p>如果我们将两条曲线放到同一张图上，我们会发现两条曲线相交于一段线段。
+如果当租金落在这个线段上，市场中待出租房屋与出租房屋数相等，达到了平衡。
+此时，价格被称为<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Economic_equilibrium"><em>均衡价格(Equilibrium Price)</em></a>。
+很显然，此时<strong>市场中商品实际成交</strong>的价格就是均衡价格。</p>
+<p><img src="/2021/03/06/how-the-price-change-when-xxx/./equilibrium.png" alt="市场平衡"></p>
+<p>用上面的例子，假设租金为 1250 元。此时房东侧，房东 A、B 愿意出租房屋，
+C、D、E 由于低于心理价位，没有出租房屋。租客侧，租客 I，J 愿意租赁房屋，
+租客 K，L，M 由于高于心理价位，没有在小区中租赁房屋。此时市场上，
+A、B 与 I、J 会达成交易，实际出租房屋数为 2。</p>
+<p>在实际中，参与市场的个体数量众多，一般而言供应曲线和需求曲线都是平滑的。
+不失一般性的，我们用平滑的曲线来代替供应曲线与需求曲线。</p>
+<p><img src="/2021/03/06/how-the-price-change-when-xxx/./smoothed-sd-curve.png" alt="平滑的供需曲线"></p>
+<p>上面这个小区的例子，就是所谓的「<strong>供需决定价格</strong>」。确切的来说，
+是供给曲线与需求曲线共同决定价格——两条曲线的交点。</p>
+<h2 id="价格弹性"><a class="header-anchor" href="#价格弹性">¶</a>价格弹性</h2>
+<p>对于不同的商品，人们对价格变动的敏感度是不一样的。如大米、面粉等生活必需品，
+人们对于价格变动是不敏感的。然而，对于另外一些商品，如奢侈品，
+价格的变动常常会影响人们的购买决策。在经济学中，
+我们可以通过*价格弹性（Price Elasticity）*来描述市场这一行为。</p>
+<p><img src="/2021/03/06/how-the-price-change-when-xxx/./price-elasticity.png" alt="需求的价格弹性"></p>
+<p>上图是一条需求曲线（为什么？），假设价格从 A 点变化到 B 点，
+我们可以计算出来需求量变化的<strong>百分比</strong>与价格变化的<strong>百分比</strong>的比值，
+这被称为需求的价格弹性。</p>
+<p>$$
+E_d =\frac{\Delta Q / Q_A}{\Delta P / P_A}
+$$</p>
+<blockquote>
+<p>实际上，价格弹性的精确定义需要借助微分，此处为了简单不展开。</p>
+</blockquote>
+<p>类似定义，也可以定义出供给的价格弹性。由于需求的价格弹性恒大于等于 0，
+供给的价格弹性小于等于 0（为什么？）。因此在讨论价格弹性的时候，
+常常把符号舍去。例如，说某个商品的供给的价格弹性为 1，其实在数学上，
+它的价格弹性应该为 -1.</p>
+<p>弹性也可以是一个相对的概念，假如我们说某个商品，供给比需求更有弹性，
+指的是供给的价格弹性（注意舍去符号）要大于需求的价格弹性。</p>
+<p>建立了供给、需求、均衡价格与价格弹性的概念之后。
+我们已经准备好了研究税赋的理论工具了。</p>
+<h2 id="税赋"><a class="header-anchor" href="#税赋">¶</a>税赋</h2>
+<blockquote>
+<p>Our new Constitution is now established, and has an appearance that
+promises permanency; but in this world nothing can be said to be certain,
+except death and taxes.</p>
+<p>– Benjamin Franklin</p>
+</blockquote>
+<p>税，相信大家都很熟悉。购买商品时，发票上有时会打印着增值税；
+发工资的时候，员工会被征收所得税；交易股票的时候，
+卖出者会被征收印花税等等。
+如果，政府对某件商品征收消费税，我们的一般直觉是
+「啊，这笔税收一定最终是消费者承担吧」。然而，事实真的是这样吗？</p>
+<blockquote>
+<p>tl;dr; 政府无法将税收精确地分摊到买卖双方。</p>
+</blockquote>
+<h3 id="以手抓饼为例"><a class="header-anchor" href="#以手抓饼为例">¶</a>以手抓饼为例</h3>
+<p>假设，政府有一天决定对「手抓饼」进行征税，政府有两种选择，
+第一种是在需求侧征税，例如手抓饼的价格是 5 元/个，消费税每个 1 元。
+此时消费者需要付出 6 元，5 元付给卖家，1 元作为税；另外一种是在供应端征税，
+例如卖家供应手抓饼的价格为 5 元，税率每售出 1 个 1 元。
+此时卖出一个手抓饼收到 5 元，其中需要向政府缴纳 1 块钱作为税收，
+卖家只能留存 4 元。</p>
+<p>在上面<a href="#%E4%BB%B7%E6%A0%BC%E7%9A%84%E5%86%B3%E5%AE%9A%E5%9B%A0%E7%B4%A0">价格的决定因素</a>中提到，市场价格由供需决定。
+要研究在增加税收时，市场的价格如何变化，我们需要研究<strong>供需的变化</strong>。
+假设在征税之前，「手抓饼」市场的供求曲线如下，均衡价格为 5 元。</p>
+<p><img src="/2021/03/06/how-the-price-change-when-xxx/./example-ds-curve.png" alt="手抓饼供求曲线"></p>
+<h3 id="在需求侧征税"><a class="header-anchor" href="#在需求侧征税">¶</a>在需求侧征税</h3>
+<p>假设政府在需求侧征税，每一个手抓饼向消费者征收 1 元税收。此时，
+我们来分析<strong>供需的变化</strong>。</p>
+<p>首先对于供给侧而言，
+对需求侧征税对供给侧完全无影响，因此，<strong>供给曲线</strong>是不变的。
+作为消费者而言，只会关心最后的到手价格，也就是<strong>含税价格</strong>，
+消费者不会含税价格里面有多少是税收，
+多少归属于商家。因此，以含税价格计，商品的需求曲线是不变的。
+但是，对于供给侧只能收到<strong>非含税价格</strong>，
+如果以非含税价格计，扣除税收后，商品的需求曲线会<strong>向下平移</strong>税收个单位，
+在手抓饼的例子中，也就是向下平移 1 个单位，到 $D^{\prime}$ 处。
+可以看到，以非含税价格计，市场建立到一个新的平衡态 $E^{\prime}$。
+此时，消费者需要付出 $P_d$ 元，卖家收到 $P_s$ 元，$P_d - P_s$
+正好为 1 元，交给政府作为税收。</p>
+<p><img src="/2021/03/06/how-the-price-change-when-xxx/./price-change-tax-on-demand.png" alt="需求侧征税的影响"></p>
+<p>从上面的结果中可以发现，在征税后，手抓饼的价格上涨到 $P_d$ 元，
+但是 $P_d$ 会小于 6 元（$P_s &lt; E = 5, P_d = P_s + 1 &lt; 6$），
+也就是这 1 元税收不会完全转嫁到消费者身上。那么，这 1 块钱税收是如何分配的呢？
+观察图中，因为税收的影响，手抓饼的价格上涨到 $P_d$ 元，为了获得一个手抓饼，
+消费者要多付出 $P_d - E$ 的钱，也就是图中蓝色阴影部分，
+很显然，这一部分钱是税收的一部分。然而，
+由于市场新平衡，卖家只能够收到 $P_s$ 的钱，比未征税时的 $E$，
+少挣了 $E - P_s$，也就是图中绿色阴影部分，
+相当于卖家将这部分少挣的钱作为了税收的一部分上缴给了国家。
+蓝色阴影的面积与绿色阴影的面积比就是这 1 块钱税收在两者之间的分摊。</p>
+<h3 id="在供给侧征税"><a class="header-anchor" href="#在供给侧征税">¶</a>在供给侧征税</h3>
+<p>假设政府在供给侧征税，也就是当卖家每卖出一个手抓饼的时候，
+向卖家征收 1 元税收。仿照上面的分析来看市场价格如何变动。</p>
+<p>首先对于需求侧来说，不会感知到对供给侧的税收，因此，对需求曲线无任何影响。
+对于供给侧来说，也只会关心自己的到手价格，即<strong>不含税价格</strong>。
+以不含税价格计，供给曲线不变。但是对于消费者而言，是以<strong>含税价格</strong>成交的。
+以含税价格计，加上税收，供给曲线<strong>向上平移</strong>税收个单位，在手抓饼的例子中是
+1 个单位，到 $S^{\prime}$ 处。可以看到，市场建立了新的平衡态$E^{\prime}$，
+此时，消费者需要付出 $P_d$ 元，卖家收到 $P_s$ 元，$P_d - P_s$
+正好为 1 元，交给政府作为税收。</p>
+<p><img src="/2021/03/06/how-the-price-change-when-xxx/./price-change-tax-on-supply.png" alt="供给侧征税的影响"></p>
+<p>分析征税后的变化，手抓饼的价格上涨到 $P_d$，但是同样 $P_d &lt; 6$ 元。
+也就是税收不会完全转嫁到消费者身上。看税收的分配，
+消费者相较征税前多付出了 $P_d - E$，也就是图中蓝色阴影部分，
+这一部分作为了隐性税收上交给了政府。卖家在征税后只能收到 $P_s$ 的钱，
+比未征税时的 $E$，少挣了 $E - P_s$，也就是图中绿色阴影部分，
+相当于这一部分作为了税收上交给了国家。
+蓝色阴影的面积与绿色阴影的面积比就是这 1 块钱税收在两者之间的分摊。</p>
+<p>从上面的例子中可以看到，无论政府对那一方征税，另外一方都会一同承担税收。
+可以得出结论：「如果政府对一项商品征税，对于需求侧而言，商品价格<strong>会上涨</strong>，
+对于供给侧而言，收入<strong>会下跌</strong>」。</p>
+<h2 id="什么决定了税负归宿"><a class="header-anchor" href="#什么决定了税负归宿">¶</a>什么决定了税负归宿</h2>
+<p>接下来，我们来考虑最后一个问题，什么因素决定了赋税的分担比例，
+即税负归宿（Tax Incidence）呢？
+从供求曲线和需求曲线来看，似乎曲线越「平」，形成的阴影面积会越小。
+从<a href="#%E4%BB%B7%E6%A0%BC%E5%BC%B9%E6%80%A7">价格弹性</a>一节中，我们可以知道，曲线的「平度」
+可以用价格弹性度量。
+也就是分担的税收越少。如下图所示，展示了在供给侧征税时，
+税赋分担比例随需求曲线的价格弹性的变化。</p>
+<p><img src="/2021/03/06/how-the-price-change-when-xxx/./tax-incidence-relate-to-elasticity.png" alt="税负归宿与价格弹性的关系"></p>
+<p>A 图中，需求曲线平缓，需求非常富有弹性。此时，可以看到蓝色部分消费者负担的税收，
+是要少于绿色部分卖家负担的税收的。B 图中，两者的弹性相比不大，
+消费者与卖家负担的比例差不多。C 图中，需求曲线较陡，需求非弹性，
+蓝色部分消费者负担的税收要多于卖家负担的税收。总结起来，
+税赋会由弹性<strong>更加弱</strong>的一方承受更多，无论政府选择向哪一方征税
+（向需求侧征税的场合，读者可以仿照本节方法自行证明）。</p>
+<h2 id="房产税对租金的影响"><a class="header-anchor" href="#房产税对租金的影响">¶</a>房产税对租金的影响</h2>
+<p><strong>本节不构成任何投资建议。</strong></p>
+<p>在了解了税赋归宿之后，我们可以来脑内演习一下，当政府征收房产税之后，
+会如何影响租房市场。</p>
+<p>首先，由于征税的本质，市场租金（短期内）会上涨。房产税是<strong>财产税</strong>，
+也就是对房东持有房地产的这一行为征税。显然，
+房东有将房产税转嫁给租客的动机，是完全合理的。
+从<a href="#%E4%BB%80%E4%B9%88%E5%86%B3%E5%AE%9A%E4%BA%86%E7%A8%8E%E8%B4%9F%E5%BD%92%E5%AE%BF">什么决定了税负归宿</a>这一节中，
+我们知道税负的分担比例是由双方的价格弹性决定的。那么，
+有什么因素影响双方的价格弹性呢？</p>
+<h3 id="租客侧的价格弹性"><a class="header-anchor" href="#租客侧的价格弹性">¶</a>租客侧的价格弹性</h3>
+<p>在需求（租客）侧，有以下因素影响价格弹性：</p>
+<ol>
+<li>
+<p>必要性：如果一件商品对于需求侧更加必要，那么需求更加趋于非弹性。
+对于租客而言，如果无法在生活的城市购置房屋的时候，租房是唯一的选择，
+有较高的必要性。</p>
+</li>
+<li>
+<p>替代商品：如果一件商品有替代商品的话，需求趋于弹性。</p>
+</li>
+<li>
+<p>对市场的定义：需求曲线的弹性也取决于我们对市场的定义。市场范围越小，
+需求曲线更加趋于弹性。以租房市场为例，
+北京的租房的需求会比全国的租房市场的需求更加弹性，
+海淀区的租房需求会比北京的租房需求更加弹性。原因是，市场范围越小，
+越容易找到替代商品，比如以海淀区的租房市场，
+昌平区、朝阳区、丰台区的出租屋都构成海淀区的出租屋替代商品。</p>
+</li>
+<li>
+<p>时间跨度：考虑的时间跨度更长，需求趋于弹性。</p>
+</li>
+</ol>
+<p>虽然，租房对于租客而言有一定的必要性。但是就替代商品而言，
+租客可以较为方便的流动，有丰富的替代商品可以选择。另外，
+租客也可以选择以买房或者移往别的城市的方式退出该地的租房市场。
+因此，考虑各种因素，需求侧具有一定的价格弹性。</p>
+<h3 id="房东侧的价格弹性"><a class="header-anchor" href="#房东侧的价格弹性">¶</a>房东侧的价格弹性</h3>
+<p>在供应（房东）侧，有以下因素影响价格弹性：</p>
+<ol>
+<li>
+<p>生产的灵活性：如果供应者可以很灵活地调整供应量，那么供应趋于弹性；</p>
+</li>
+<li>
+<p>时间跨度：与需求相同，考虑的时间跨度更长，供应趋于弹性；</p>
+</li>
+</ol>
+<p><strong>假设</strong>，房东会出租所有非自住房屋<sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>。
+房东调整供应量的方式只有买卖房屋的方式。对于房地产价值高企，
+未来变化不明的现在，买卖房屋会是一种风险很高的决策。如果，
+房东无法灵活地调整供应量，那么供应侧的价格弹性会比较低。</p>
+<p>综合上面的两种考虑，如果征收房产税，房东想要将税转嫁到租客侧，
+由于双方价格弹性，房东无法将所有的房产税转嫁到租客侧，
+甚至有较大可能，供给侧价格弹性较低，房东必须自行负担房产税的大部分。</p>
+<h2 id="结论"><a class="header-anchor" href="#结论">¶</a>结论</h2>
+<p>在文章中，我们主要讨论了「征税对价格的影响」。
+了解了「价格由供需共同决定」、「价格弹性」以及「税收归宿」三个概念。
+当政府对一件商品征税的时候，供需双方的税负分担比例由各自的价格弹性决定。</p>
+<p>以租房市场为例，如果政府推出房产税，在<strong>短期内</strong>，房租会上涨，
+但是不会完全负担房产税。根据价格弹性的分析，有较大的可能，
+房东自行负担房产税中的大部分。</p>
+<h2 id="参考文献"><a class="header-anchor" href="#参考文献">¶</a>参考文献</h2>
+<p>[1]: Mankiw N G. Principles of Economics[M]. Nelson Education, 2014.</p>
+<h2 id="注释"><a class="header-anchor" href="#注释">¶</a>注释</h2>
+<p><sup id="fnref:1"><a href="#fn:1" rel="footnote">1</a></sup>：考虑到房屋空置时除了资产价值的变化，不会产生任何其他的收入。
+基于理性，假设房东会出租所有非自住房屋。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Qingyu Deng
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/" title="人人都能懂的经济学：征收房产税的时候租金会如何变化">https://ayase.moe/2021/03/06/how-the-price-change-when-xxx/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/%E7%BB%8F%E6%B5%8E/" rel="tag"># 经济</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2020/12/31/annual-reflection-2020/" rel="prev" title="2020 年终总结">
+                  <i class="fa fa-chevron-left"></i> 2020 年终总结
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/03/09/customized-git-config/" rel="next" title="基于文件夹的个性化 git 配置方法">
+                  基于文件夹的个性化 git 配置方法 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">127k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:55</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Ayase-252/Ayase-252.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

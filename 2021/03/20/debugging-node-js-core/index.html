@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ayase.moe","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.14.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":true,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="在去年的年终总结中， 我给自己立下了一个 flag——「参与开源项目，向知名开源项目提交至少一个功能性或者修复性 PR」。 我选择的是大名鼎鼎的Node.js。应该符合 知名开源项目。事不宜迟，赶快行动。  tl;dr; 本文介绍的是调试 Node.js 核心中 JS 侧的代码方法。 请注意，并不是 Node.js 应用的调试哦。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Node.js 调试手记：使用 VS Code 调试 Node.js JavaScript 侧代码">
+<meta property="og:url" content="https://ayase.moe/2021/03/20/debugging-node-js-core/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="在去年的年终总结中， 我给自己立下了一个 flag——「参与开源项目，向知名开源项目提交至少一个功能性或者修复性 PR」。 我选择的是大名鼎鼎的Node.js。应该符合 知名开源项目。事不宜迟，赶快行动。  tl;dr; 本文介绍的是调试 Node.js 核心中 JS 侧的代码方法。 请注意，并不是 Node.js 应用的调试哦。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ayase.moe/2021/03/20/debugging-node-js-core/node-js.png">
+<meta property="article:published_time" content="2021-03-20T14:36:26.000Z">
+<meta property="article:modified_time" content="2023-02-12T16:58:41.256Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="Node.js">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ayase.moe/2021/03/20/debugging-node-js-core/node-js.png">
+
+
+<link rel="canonical" href="https://ayase.moe/2021/03/20/debugging-node-js-core/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ayase.moe/2021/03/20/debugging-node-js-core/","path":"2021/03/20/debugging-node-js-core/","title":"Node.js 调试手记：使用 VS Code 调试 Node.js JavaScript 侧代码"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Node.js 调试手记：使用 VS Code 调试 Node.js JavaScript 侧代码 | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-85059083-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Ayase-252's wonderland</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#node-js-%E7%9A%84%E7%BB%93%E6%9E%84"><span class="nav-number">1.</span> <span class="nav-text">Node.js 的结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8F%90%E5%8D%87%E6%95%88%E7%8E%87-%E5%A4%96%E7%BD%AE-js"><span class="nav-number">2.</span> <span class="nav-text">提升效率——外置 JS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#debug-js"><span class="nav-number">3.</span> <span class="nav-text">DEBUG JS</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">4.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:i@ayase-lab.com" title="E-Mail → mailto:i@ayase-lab.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener me" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2021/03/20/debugging-node-js-core/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Node.js 调试手记：使用 VS Code 调试 Node.js JavaScript 侧代码 | Ayase-252's wonderland">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Node.js 调试手记：使用 VS Code 调试 Node.js JavaScript 侧代码
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2021-03-20 22:36:26" itemprop="dateCreated datePublished" datetime="2021-03-20T22:36:26+08:00">2021-03-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-02-13 00:58:41" itemprop="dateModified" datetime="2023-02-13T00:58:41+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Technology/" itemprop="url" rel="index"><span itemprop="name">Technology</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>2 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>在<a href="/2020/12/31/annual-reflection-2020/" title="2020 年终总结">去年的年终总结</a>中，
+我给自己立下了一个 flag——「参与开源项目，向知名开源项目提交至少一个功能性或者修复性 PR」。
+我选择的是大名鼎鼎的<a target="_blank" rel="noopener" href="https://github.com/nodejs/node">Node.js</a>。应该符合
+知名开源项目。事不宜迟，赶快行动。</p>
+<blockquote>
+<p>tl;dr; 本文介绍的是调试 Node.js <strong>核心</strong>中 JS 侧的代码方法。
+请注意，并<strong>不</strong>是 Node.js 应用的调试哦。</p>
+</blockquote>
+<span id="more"></span>
+<h2 id="node-js-的结构"><a class="header-anchor" href="#node-js-的结构">¶</a>Node.js 的结构</h2>
+<p>Node.js 由两部分代码组成，一部分代码是 C++ 代码，位于项目的 <code>src</code> 目录中，
+另外一部分是 JavaScript 代码，位于项目的 <code>lib</code> 目录中。</p>
+<p><img src="/2021/03/20/debugging-node-js-core/./node-js.png" alt="Node 项目架构"></p>
+<p>C++ 部分负责把用 C 或者 C++ 编写的一些提供底层能力的库粘在一起，
+如异步 I/O 库 libuv（C）、JS引擎 V8（C++）、http解析器 llhttp (TS 编译到 C)等。
+C++ 部分也提供了程序的入口点，如 <code>node xxx.js</code> 实际上最先到达的就是 C++ 部分的
+<a target="_blank" rel="noopener" href="https://github.com/nodejs/node/blob/e427c487fe3f7da465c372ade3d65bd55b057e30/src/node_main.cc#L105">main 函数</a>
+另外，C++ 部分也提供了一些 Node.js 内部才能够使用到的模块，
+这些模块可以被 JavaScript 部分调用来实现逻辑。</p>
+<p>JavaScript 部分提供了用户侧可使用的API。
+这些 API 在文档中分为了<a target="_blank" rel="noopener" href="https://nodejs.org/dist/latest-v15.x/docs/api/async_hooks.html">若干模块</a>，
+基本上每一个模块对应 <code>lib</code> 中的一个 JS 文件。根据模块的名字能容易找到对应的文件，
+如 <code>Events</code> 模块，对应的就是 <code>lib/events.js</code>。</p>
+<h2 id="提升效率-外置-js"><a class="header-anchor" href="#提升效率-外置-js">¶</a>提升效率——外置 JS</h2>
+<p>Node.js 严格上算是一个 C++ 程序。对程序的修改要走编译流程生效。
+对于习惯于热重载等技术带来的即时反应的工程师来说，这套流程是非常慢。
+好在，如果只修改 JavaScript 侧的代码的话，
+我们可以运行下列命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">./configure --node-builtin-modules-path $(<span class="built_in">pwd</span>)</span><br></pre></td></tr></table></figure>
+<p>此时，如果运行 <code>make -j4</code> 会构建在 <code>out/Release</code> 下出来一个特殊的 <code>node</code> 二进制。
+在这个二进制中，JS 层的文件不会被编译进去，
+而是会使用 <code>--node-builtin-modules-path</code> 指定的外置 JS
+path 下的 <code>lib</code> 中的 JS 文件运行时解释。在这个例子中，就是 Node.js 的项目文件夹。
+对 JS 文件的修改会即时地反应到这个特殊二进制当中。</p>
+<p>例如，为了测试，我们在 <code>EventEmitter</code> 的 <code>init</code> 方法中抛出一个异常:</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// lib/events.js</span></span><br><span class="line"><span class="title class_">EventEmitter</span>.<span class="property">init</span> = <span class="keyword">function</span>(<span class="params">opts</span>) &#123;</span><br><span class="line">  <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">Error</span>(<span class="string">&#x27;error&#x27;</span>);</span><br><span class="line">  <span class="keyword">if</span> (<span class="variable language_">this</span>.<span class="property">_events</span> === <span class="literal">undefined</span> ||</span><br><span class="line">      <span class="variable language_">this</span>.<span class="property">_events</span> === <span class="title class_">ObjectGetPrototypeOf</span>(<span class="variable language_">this</span>).<span class="property">_events</span>) &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_events</span> = <span class="title class_">ObjectCreate</span>(<span class="literal">null</span>);</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">_eventsCount</span> = <span class="number">0</span>;</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="comment">//..</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>保存后，执行 <code>./out/Release/node</code>，就可以看到 node 确实抛出了异常</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">node:events:186</span><br><span class="line">  throw new Error(<span class="string">&#x27;error&#x27;</span>);</span><br><span class="line">  ^</span><br><span class="line"></span><br><span class="line">Error: error</span><br><span class="line">    at process.EventEmitter.init (node:events:186:9)</span><br><span class="line">    at process.EventEmitter (node:events:79:3)</span><br><span class="line">    at setupProcessObject (node:internal/bootstrap/node:377:3)</span><br><span class="line">    at node:internal/bootstrap/node:55:1</span><br></pre></td></tr></table></figure>
+<h2 id="debug-js"><a class="header-anchor" href="#debug-js">¶</a>DEBUG JS</h2>
+<p>使用外置 JS 的可以很大的提升开发效率。但是，
+调试时如果我想看到一些属性或者变量又怎么办呢？<code>console.log</code> 大法吗？</p>
+<p>很不幸的是，<code>console.log</code> 在一部分模块里是行不通的。因为 <code>console</code>
+本身也是 Node.js 公共模块的一部分。使用 <code>Stream</code> 模块实现。如果在调试
+<code>Stream</code> 模块相关的模块时，就容易出现爆栈无法打印的情况。emmmm🤔，
+难道我们就束手无策了吗？其实，是有解决方案的——调试器。</p>
+<p>调试器就是那个可以单步调试，在每一步都能够打出来当前环境的中的变量的情况的程序。
+也许 <code>console</code> 过于方便已经让我们忘记了有这把瑞士军刀了。对于 Node.js 应用，
+VS Code 的调试器原生支持。但是对于 Node.js 项目本身呢？
+我们有办法在模块源码中打断点吗？这也是有的。</p>
+<p>mmomtchev 向 VS Code JS 调试器提交了 debug Node.js 内部代码的功能[2]。
+结合上一节的外置 JS，我们可以方便地在代码中打断点，然后更改调试了。
+在 <code>.vscode/launch.json</code> 中添加下面的调试配置：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="punctuation">&#123;</span></span><br><span class="line">  <span class="attr">&quot;version&quot;</span><span class="punctuation">:</span> <span class="string">&quot;0.2.0&quot;</span><span class="punctuation">,</span></span><br><span class="line">  <span class="attr">&quot;configurations&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">    ...<span class="punctuation">,</span></span><br><span class="line">    <span class="punctuation">&#123;</span></span><br><span class="line">      <span class="attr">&quot;name&quot;</span><span class="punctuation">:</span> <span class="string">&quot;Launch current file&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;runtimeExecutable&quot;</span><span class="punctuation">:</span> <span class="string">&quot;$&#123;workspaceFolder&#125;/out/Release/node&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;args&quot;</span><span class="punctuation">:</span> <span class="punctuation">[</span></span><br><span class="line">        <span class="string">&quot;--expose-internals&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;--nolazy&quot;</span><span class="punctuation">,</span></span><br><span class="line">        <span class="string">&quot;$&#123;workspaceFolder&#125;/$&#123;relativeFile&#125;&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="punctuation">]</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;request&quot;</span><span class="punctuation">:</span> <span class="string">&quot;launch&quot;</span><span class="punctuation">,</span></span><br><span class="line">      <span class="attr">&quot;type&quot;</span><span class="punctuation">:</span> <span class="string">&quot;pwa-node&quot;</span></span><br><span class="line">    <span class="punctuation">&#125;</span></span><br><span class="line">  <span class="punctuation">]</span></span><br><span class="line"><span class="punctuation">&#125;</span></span><br></pre></td></tr></table></figure>
+<p>然后把需要调试的<strong>外部</strong> JS 文件，复制到 Node.js 项目中。打开 VS Code 调试器，
+选择 <code>Launch current file</code> 启动，就可以愉快调试了。</p>
+<h2 id="参考资料"><a class="header-anchor" href="#参考资料">¶</a>参考资料</h2>
+<p>[1] Node.js <a target="_blank" rel="noopener" href="https://github.com/nodejs/node/blob/master/BUILDING.md#speeding-up-frequent-rebuilds-when-developing">BUILDING</a>
+[2] <a target="_blank" rel="noopener" href="https://github.com/microsoft/vscode-js-debug/issues/823">Add support for debugging Node internals when they are externally loaded</a></p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Qingyu Deng
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ayase.moe/2021/03/20/debugging-node-js-core/" title="Node.js 调试手记：使用 VS Code 调试 Node.js JavaScript 侧代码">https://ayase.moe/2021/03/20/debugging-node-js-core/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Node-js/" rel="tag"># Node.js</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2021/03/09/customized-git-config/" rel="prev" title="基于文件夹的个性化 git 配置方法">
+                  <i class="fa fa-chevron-left"></i> 基于文件夹的个性化 git 配置方法
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2021/06/08/the-value-of-testing/" rel="next" title="测试的价值">
+                  测试的价值 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">127k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:55</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Ayase-252/Ayase-252.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

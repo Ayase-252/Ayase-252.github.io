@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ayase.moe","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.14.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":true,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="原型链是JavaScript中的一个核心特性，会在前端面试中经常问道。原型链原理十分简单，但是在面试题里看起来似乎不是那么简单。通过一些不常有的操作，原型链的面试题很容易就可以将人陷入一个迷宫之中无法脱出。只有掌握原型链的基本原理的勇士才能够找出通往出口的道路。 但是正如我说的，原型链的原理是简单的。本文会通过三个步骤，来看这些面试题是怎么将简单的原型链弄复杂的。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Step by Step —— 解密原型链">
+<meta property="og:url" content="https://ayase.moe/2018/11/21/step-by-step-prototype/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="原型链是JavaScript中的一个核心特性，会在前端面试中经常问道。原型链原理十分简单，但是在面试题里看起来似乎不是那么简单。通过一些不常有的操作，原型链的面试题很容易就可以将人陷入一个迷宫之中无法脱出。只有掌握原型链的基本原理的勇士才能够找出通往出口的道路。 但是正如我说的，原型链的原理是简单的。本文会通过三个步骤，来看这些面试题是怎么将简单的原型链弄复杂的。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ayase.moe/2018/11/21/step-by-step-prototype/relation-among-objects.png">
+<meta property="article:published_time" content="2018-11-21T16:00:58.000Z">
+<meta property="article:modified_time" content="2023-02-12T16:58:41.268Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="Web Development">
+<meta property="article:tag" content="JavaScript">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ayase.moe/2018/11/21/step-by-step-prototype/relation-among-objects.png">
+
+
+<link rel="canonical" href="https://ayase.moe/2018/11/21/step-by-step-prototype/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ayase.moe/2018/11/21/step-by-step-prototype/","path":"2018/11/21/step-by-step-prototype/","title":"Step by Step —— 解密原型链"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Step by Step —— 解密原型链 | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-85059083-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Ayase-252's wonderland</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%A5%E9%97%A8%EF%BC%9Aprototype%E4%B8%8E-prototype"><span class="nav-number">1.</span> <span class="nav-text">入门：prototype与[[prototype]]</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%9B%E9%98%B6-constructor"><span class="nav-number">2.</span> <span class="nav-text">进阶:constructor</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#constructor%E5%9C%A8%E5%93%AA%E9%87%8C%EF%BC%9F"><span class="nav-number">2.1.</span> <span class="nav-text">constructor在哪里？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#constructor%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">2.2.</span> <span class="nav-text">constructor是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%83%E4%B9%A0%E9%A2%98"><span class="nav-number">2.3.</span> <span class="nav-text">练习题</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%93%E5%AE%B6%EF%BC%9Afunction-prototype"><span class="nav-number">3.</span> <span class="nav-text">专家：Function.prototype</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E4%B8%8Efunction-prototype"><span class="nav-number">3.1.</span> <span class="nav-text">构造函数与Function.prototype</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%88%E6%9E%81%E6%B5%8B%E9%AA%8C"><span class="nav-number">3.2.</span> <span class="nav-text">终极测验</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:i@ayase-lab.com" title="E-Mail → mailto:i@ayase-lab.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener me" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2018/11/21/step-by-step-prototype/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Step by Step —— 解密原型链 | Ayase-252's wonderland">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Step by Step —— 解密原型链
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-11-22 00:00:58" itemprop="dateCreated datePublished" datetime="2018-11-22T00:00:58+08:00">2018-11-22</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-02-13 00:58:41" itemprop="dateModified" datetime="2023-02-13T00:58:41+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Programming/" itemprop="url" rel="index"><span itemprop="name">Programming</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>5 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>原型链是JavaScript中的一个核心特性，会在前端面试中经常问道。原型链原理十分简单，但是在面试题里看起来似乎不是那么简单。通过一些不常有的操作，原型链的面试题很容易就可以将人陷入一个迷宫之中无法脱出。只有掌握原型链的基本原理的勇士才能够找出通往出口的道路。</p>
+<p>但是正如我说的，原型链的原理是简单的。本文会通过三个步骤，来看这些面试题是怎么将简单的原型链弄复杂的。</p>
+<span id="more"></span>
+<h2 id="入门：prototype与-prototype"><a class="header-anchor" href="#入门：prototype与-prototype">¶</a>入门：prototype与[[prototype]]</h2>
+<p>原型链的原理其实很简单：<strong>如果在某个对象中查找一个属性而在当前属性中未命中时，JavaScript引擎会转向该对象<code>[[prototype]]</code>指向的对象继续查找这个属性</strong>。在一般浏览器里<code>[[prototype]]</code>被实现为<code>__proto__</code>属性，因此下面用<code>__proto__</code>替换<code>[[prototype]]</code>的写法。</p>
+<p>因此执行以下代码：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> obj = &#123;<span class="attr">a</span>: <span class="number">1</span>, <span class="attr">b</span>: <span class="number">2</span>&#125;</span><br><span class="line">obj.<span class="property">__proto__</span> = &#123;<span class="attr">c</span>: <span class="number">2</span>&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(obj.<span class="property">c</span>)  <span class="comment">// 2</span></span><br></pre></td></tr></table></figure>
+<p><code>obj.c</code>为2，因为<code>c</code>属性不在<code>obj</code>的属性中，因此JS引擎向原型链的上一级，即<code>obj.__proto__</code>查找<code>c</code>，此时命中了<code>c</code>。所有原型链的终极思路都是这个。</p>
+<p>接下来，我们将问题变的复杂一点点：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">Person</span> (name) &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">name</span> = name</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="title class_">Person</span>.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">sayName</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="variable language_">this</span>.<span class="property">name</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> jim = <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&#x27;Jim&#x27;</span>)</span><br><span class="line">jim.<span class="title function_">sayName</span>() <span class="comment">// &#x27;Jim&#x27;</span></span><br></pre></td></tr></table></figure>
+<p>这是一个很典型地使用原型链实现类的形式。这里<code>jim</code>搜寻到了<code>.sayName</code>方法。为什么呢？这个问题的关键在于<code>new Person(Jim)</code>干了什么？</p>
+<p><code>new</code>操作符可以看作以下函数：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">_new</span>(<span class="params">F, ...args</span>) &#123;</span><br><span class="line">    <span class="keyword">const</span> obj = &#123;&#125;</span><br><span class="line">    obj.<span class="property">__proto__</span> = F.<span class="property"><span class="keyword">prototype</span></span></span><br><span class="line">    <span class="keyword">const</span> retVal = F.<span class="title function_">apply</span>(obj, args)</span><br><span class="line">    <span class="keyword">if</span>(!retVal &amp;&amp; <span class="keyword">typeof</span> retVal === <span class="string">&#x27;object&#x27;</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> retVal</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> obj</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>总而言之，<code>new</code>就干了三件事情：</p>
+<ol>
+<li>生成一个继承自<code>F.prototype</code>的新对象<code>obj</code>；</li>
+<li>在新对象<code>obj</code>上调用构造函数<code>F</code>；</li>
+<li>如果构造函数有返回值，<strong>且返回值是一个对象</strong>，返回返回值，如果不满足以上情况，返回构造的对象<code>obj</code>。</li>
+</ol>
+<div class="note warning"><p><code>new</code>操作符在构造函数返回对象的时候会将其当作<code>new</code>操作符的结果返回。见<a target="_blank" rel="noopener" href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/new">new</a>。</p>
+<p>2018/12/18修改</p>
+</div>
+<p>构造函数一般没有返回值。但是在有返回值的情况下注意区别，可能这里要考。</p>
+<p>到这里，原型链的初级部分就差不多了。用这些知识可以做一个小练习：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">Person</span> (name) &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">name</span> = name</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="title class_">Person</span>.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">sayName</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="variable language_">this</span>.<span class="property">name</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">Student</span> (name, school) &#123;</span><br><span class="line">    <span class="title class_">Person</span>.<span class="title function_">call</span>(<span class="variable language_">this</span>, name)</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">school</span> = school</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="title class_">Student</span>.<span class="property"><span class="keyword">prototype</span></span> = <span class="keyword">new</span> <span class="title class_">Person</span>()</span><br><span class="line"><span class="title class_">Student</span>.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">saySchool</span> = <span class="keyword">function</span> (<span class="params"></span>) &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="variable language_">this</span>.<span class="property">school</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> jack = <span class="keyword">new</span> <span class="title class_">Student</span>(<span class="string">&#x27;Jack&#x27;</span>, <span class="string">&#x27;MIT&#x27;</span>)</span><br><span class="line">jack.<span class="title function_">sayName</span>()</span><br><span class="line">jack.<span class="title function_">saySchool</span>()</span><br></pre></td></tr></table></figure>
+<p>上面<code>jack.sayName()</code>、<code>jack.saySchool</code>会输出什么呢?</p>
+<h2 id="进阶-constructor"><a class="header-anchor" href="#进阶-constructor">¶</a>进阶:constructor</h2>
+<p>当原型链与<code>constructor</code>混合起来，问题就又复杂了一层。复杂的原因在于，从属性名看起来它指向的是对象的构造函数，但是可能因为一堆骚操作之后，<code>constructor</code>并不是指向对象的构造函数。</p>
+<p>要解决<code>constructor</code>是什么的问题，我们还是从最简单的例子开始。</p>
+<h3 id="constructor在哪里？"><a class="header-anchor" href="#constructor在哪里？">¶</a>constructor在哪里？</h3>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">Person</span> (name) &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">name</span> = name</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> jim = <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&#x27;jim&#x27;</span>)</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(jim.<span class="property">constructor</span>)</span><br></pre></td></tr></table></figure>
+<p>在浏览器上是可以打印<code>jim.constructor</code>属性的，它指向的确实是<code>Person</code>函数。但是能够打印属性那么它一定在<code>jim</code>上吗？事实上不是的，<code>jim.constructor</code>其实是<code>jim.__proto__.constructor</code>。在浏览器上执行<code>jim.constructor === jim.__proto__.constructor</code>会返回<code>true</code>证明了这一结果。</p>
+<p>从<code>new</code>操作符的执行过程来看，我们并没有向新构造的元素添加<code>constructor</code>属性，我们有的只是通过<code>__proto__</code>方法继承构造函数的<code>prototype</code>，<code>constructor</code>就是在这一步被加入对象的原型链中。</p>
+<p>在明白了<code>constructor</code>在哪里之后，诶？说了那么久，<code>constructor</code>到底是什么东西啊?</p>
+<h3 id="constructor是什么？"><a class="header-anchor" href="#constructor是什么？">¶</a><code>constructor</code>是什么？</h3>
+<p>相信大家都用过<code>instanceof</code>运算符。这个运算符的功能就是沿着原型链查找<code>constructor</code>，如果在原型链上找到了运算符右边所指的构造函数，那么<code>instanceof</code>就会返回<code>true</code>。</p>
+<p>如：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(jim <span class="keyword">instanceof</span> <span class="title class_">Person</span>) <span class="comment">// true</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(jim <span class="keyword">instanceof</span> <span class="title class_">Object</span>) <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+<p>大家可能会疑问为什么<code>jim instanceof Object</code>是<code>true</code>呢？这个答案在<code>jim.__proto__.__proto__.constructor === Object</code>。这就是沿着原型链查找<code>constructor</code>属性的意思。这样也就是说<code>Person.prototype.__proto__.constructor === Object</code>。emmmm，越来越混乱了吧，这个思路我们先停在这里，不要细想。接下来我们会讲到这一问题。</p>
+<h3 id="练习题"><a class="header-anchor" href="#练习题">¶</a>练习题</h3>
+<p>明白了这一原理，我们来面试中常出现的骚操作：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">Person</span> (name) &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">name</span> = name</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="title class_">Person</span>.<span class="property"><span class="keyword">prototype</span></span> = &#123;&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> jim = <span class="keyword">new</span> <span class="title class_">Person</span>(<span class="string">&#x27;jim&#x27;</span>)</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(jim.<span class="property">constructor</span>)</span><br></pre></td></tr></table></figure>
+<p>现在<code>jim.constructor</code>该打印出什么呢？</p>
+<p>按照我们刚才的思路，<code>jim.constructor === jim.__proto__.constructor === Person.prototype.constructor === &#123;&#125;.constructor</code>。注意到<code>&#123;&#125;</code>本身又是一个对象，它也有<code>__proto__</code>属性，我们继续推导<code>&#123;&#125;.constructor === &#123;&#125;.__proto__.constructor === Object.prototype.constructor === Object</code>。推导结束，答案为<code>Object</code>。大家可以自行在浏览器里验证这一答案。</p>
+<p>看完上面的推导过程是不是感觉在做数学题一样呢？但是这种骚操作仍然是较简单的操作，更加混乱的还在后面。</p>
+<h2 id="专家：function-prototype"><a class="header-anchor" href="#专家：function-prototype">¶</a>专家：<code>Function.prototype</code></h2>
+<p>既然，对象的<code>__proto__</code>属性与构造函数的<code>prototype</code>属性的关系是如此密切。那么在默认情况下，构造函数的<code>prototype</code>又是什么呢？</p>
+<p>通过控制台查看<code>Person.prototype</code>可以看到，在默认情况，<code>Person.prototype</code>是：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">constructor</span>: ƒ <span class="title class_">Person</span>(name)</span><br><span class="line"><span class="attr">__proto__</span>:</span><br><span class="line">    <span class="attr">constructor</span>: ƒ <span class="title class_">Object</span>()</span><br><span class="line">    <span class="attr">hasOwnProperty</span>: ƒ <span class="title function_">hasOwnProperty</span>()</span><br><span class="line">    <span class="attr">isPrototypeOf</span>: ƒ <span class="title function_">isPrototypeOf</span>()</span><br><span class="line">    <span class="attr">propertyIsEnumerable</span>: ƒ <span class="title function_">propertyIsEnumerable</span>()</span><br><span class="line">    <span class="attr">toLocaleString</span>: ƒ <span class="title function_">toLocaleString</span>()</span><br><span class="line">    <span class="attr">toString</span>: ƒ <span class="title function_">toString</span>()</span><br><span class="line">    <span class="attr">valueOf</span>: ƒ <span class="title function_">valueOf</span>()</span><br><span class="line">    <span class="attr">__defineGetter__</span>: ƒ <span class="title function_">__defineGetter__</span>()</span><br><span class="line">    <span class="attr">__defineSetter__</span>: ƒ <span class="title function_">__defineSetter__</span>()</span><br><span class="line">    <span class="attr">__lookupGetter__</span>: ƒ <span class="title function_">__lookupGetter__</span>()</span><br><span class="line">    <span class="attr">__lookupSetter__</span>: ƒ <span class="title function_">__lookupSetter__</span>()</span><br><span class="line">    get <span class="attr">__proto__</span>: ƒ <span class="title function_">__proto__</span>()</span><br><span class="line">    set <span class="attr">__proto__</span>: ƒ <span class="title function_">__proto__</span>()</span><br></pre></td></tr></table></figure>
+<p>即一个指向自身的<code>constructor</code>属性，以及指向<code>Object.prototype</code>的<code>__proto__</code>。构造函数的<code>prototype</code>属性是<strong>唯一影响通过该构造函数构造的对象的原型链的因素。</strong></p>
+<p>但是，在面试中为了增加混乱度，有一些单位会在<code>Function.prototype</code>上动手脚，这又是怎么一回事呢？</p>
+<h3 id="构造函数与function-prototype"><a class="header-anchor" href="#构造函数与function-prototype">¶</a>构造函数与Function.prototype</h3>
+<p>在JavaScript中，函数本身也是对象，因此函数本身也有<code>__proto__</code>属性指向<code>Function.prototype</code>对象。可以通过<code>Person.__proto__ === Function.prototype</code>验证这一结论。因为这条原型链的关系，我们可以使用诸如<code>Person.call(this, args)</code>这些函数专有的方法。但是注意，这条原型链上与构建出来的对象的原型链是没有任何关系的，因为<code>new</code>操作符的关系，构造出来的对象的<code>__proto__</code>只和函数的<code>prototype</code>有关。</p>
+<h3 id="终极测验"><a class="header-anchor" href="#终极测验">¶</a>终极测验</h3>
+<p>下面是本文的终极测验，类似真实面试中的题，可以花几分钟时间做一下…</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">function</span> <span class="title function_">o1</span> (a) &#123;</span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">a</span> = a</span><br><span class="line">&#125;</span><br><span class="line">o1.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">b</span> = <span class="number">2</span></span><br><span class="line"><span class="title class_">Function</span>.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">d</span> = <span class="number">4</span></span><br><span class="line"><span class="keyword">const</span> ob1 = <span class="keyword">new</span> <span class="title function_">o1</span>(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">a</span>)</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">b</span>)</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">constructor</span>)</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">__proto__</span>.<span class="property">constructor</span>)</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">constructor</span>.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">constructor</span>)</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">constructor</span>.<span class="property">__proto__</span>)</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(o1.<span class="property">d</span>)</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(o1.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">__proto__</span>)</span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(o1.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">__proto__</span>.<span class="property">constructor</span>)</span><br></pre></td></tr></table></figure>
+<p>答案密封线</p>
+<p>==========</p>
+<p>答案揭晓，不知道各位同学答对没有</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">a</span>)  <span class="comment">// 1</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">b</span>)  <span class="comment">// 2</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">constructor</span>) <span class="comment">// o1</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">__proto__</span>.<span class="property">constructor</span>) <span class="comment">// o1</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">constructor</span>.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">constructor</span>) <span class="comment">// o1</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(ob1.<span class="property">constructor</span>.<span class="property">__proto__</span>) <span class="comment">// Function.prototype</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(o1.<span class="property">d</span>) <span class="comment">//4</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(o1.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">__proto__</span>) <span class="comment">// Object.prototype</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(o1.<span class="property"><span class="keyword">prototype</span></span>.<span class="property">__proto__</span>.<span class="property">constructor</span>) <span class="comment">// Object</span></span><br></pre></td></tr></table></figure>
+<p>这种题我还能随手写很多，可见其变化。。。</p>
+<h2 id="总结"><a class="header-anchor" href="#总结">¶</a>总结</h2>
+<p>在遇见复杂的原型链问题时，特别是像上面那种代码非常杂乱的，首先先冷静，问题都是从一个对象查找一个属性，用我们的原型链原理：</p>
+<blockquote>
+<p>如果在某个对象中查找一个属性而在当前属性中未命中时，JavaScript引擎会转向该对象<code>[[prototype]]</code>指向的对象继续查找这个属性。</p>
+</blockquote>
+<p>此时只要明白一件事情，当前对象里有什么属性。如果当前对象里没有所要的属性，就搞清楚当前对象的<code>__proto__</code>里有什么属性。根据对象的不同，如普通对象（由字面值构建出来的对象）、构造对象（由<code>new</code>操作符构建的对象）、函数对象，一定弄清楚<code>__proto__</code>是什么。一直查找到不存在<code>__proto__</code>或者<code>__proto__</code>为<code>null</code>为止。</p>
+<p>下面是基于本文例子的一张关系图，用于参考。
+<img src="/2018/11/21/step-by-step-prototype/relation-among-objects.png" alt="relation among objects"></p>
+<h2 id="参考资料"><a class="header-anchor" href="#参考资料">¶</a>参考资料</h2>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Operators/new">new运算符</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Qingyu Deng
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ayase.moe/2018/11/21/step-by-step-prototype/" title="Step by Step —— 解密原型链">https://ayase.moe/2018/11/21/step-by-step-prototype/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Web-Development/" rel="tag"># Web Development</a>
+              <a href="/tags/JavaScript/" rel="tag"># JavaScript</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/11/20/scroll-event/" rel="prev" title="你所不知道的scroll事件：为什么scroll事件会失效？">
+                  <i class="fa fa-chevron-left"></i> 你所不知道的scroll事件：为什么scroll事件会失效？
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/11/22/make-a-calender-with-css-flex/" rel="next" title="纯CSS Flex实现日历布局">
+                  纯CSS Flex实现日历布局 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">127k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:55</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Ayase-252/Ayase-252.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ayase.moe","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.14.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":true,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="正则表达式是一种描述句法规则的语言。在学习正则表达式的时候， 直接从某种程序语言的正则表达式 API 入手的我总感觉正则表达式非常复杂， 难以掌握。因此，我决定从另外一种角度重新审视一下正则表达式。 本文将会从正则表达式的数学原理出发， 看正则表达式如何仅仅从用 3 种基本运算就能够表示各种各样的句法规则。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="重新学习正则表达式——从理论角度">
+<meta property="og:url" content="https://ayase.moe/2019/10/15/learn-regex-from-a-mathematic-perspective/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="正则表达式是一种描述句法规则的语言。在学习正则表达式的时候， 直接从某种程序语言的正则表达式 API 入手的我总感觉正则表达式非常复杂， 难以掌握。因此，我决定从另外一种角度重新审视一下正则表达式。 本文将会从正则表达式的数学原理出发， 看正则表达式如何仅仅从用 3 种基本运算就能够表示各种各样的句法规则。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2019-10-15T17:07:23.000Z">
+<meta property="article:modified_time" content="2023-02-12T16:58:41.264Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="Regular Expression">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://ayase.moe/2019/10/15/learn-regex-from-a-mathematic-perspective/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ayase.moe/2019/10/15/learn-regex-from-a-mathematic-perspective/","path":"2019/10/15/learn-regex-from-a-mathematic-perspective/","title":"重新学习正则表达式——从理论角度"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>重新学习正则表达式——从理论角度 | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-85059083-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Ayase-252's wonderland</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E7%BD%AE%E6%A6%82%E5%BF%B5"><span class="nav-number">2.</span> <span class="nav-text">前置概念</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E8%BF%90%E7%AE%97"><span class="nav-number">3.</span> <span class="nav-text">基本运算</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%80%9A%E8%BF%87%E5%9F%BA%E6%9C%AC%E8%BF%90%E7%AE%97%E6%9D%A5%E8%A1%A8%E7%A4%BA%E5%8F%A6%E5%A4%96%E4%B8%80%E7%A7%8D%E8%AF%AD%E8%A8%80"><span class="nav-number">3.1.</span> <span class="nav-text">通过基本运算来表示另外一种语言</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F"><span class="nav-number">4.</span> <span class="nav-text">正则表达式</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E7%AE%97"><span class="nav-number">4.1.</span> <span class="nav-text">运算</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%90%E7%AE%97%E4%BC%98%E5%85%88%E7%BA%A7"><span class="nav-number">4.2.</span> <span class="nav-text">运算优先级</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%9E%E9%99%85%E7%BC%96%E7%A8%8B%E8%AF%AD%E8%A8%80%E4%B8%AD%E6%AD%A3%E5%88%99%E8%A1%A8%E8%BE%BE%E5%BC%8F%E7%9A%84%E4%BD%BF%E7%94%A8"><span class="nav-number">5.</span> <span class="nav-text">实际编程语言中正则表达式的使用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#demo%EF%BC%9A%E9%AA%8C%E8%AF%81%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6%E5%9C%B0%E5%9D%80"><span class="nav-number">6.</span> <span class="nav-text">Demo：验证电子邮件地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:i@ayase-lab.com" title="E-Mail → mailto:i@ayase-lab.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener me" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2019/10/15/learn-regex-from-a-mathematic-perspective/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="重新学习正则表达式——从理论角度 | Ayase-252's wonderland">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          重新学习正则表达式——从理论角度
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2019-10-16 01:07:23" itemprop="dateCreated datePublished" datetime="2019-10-16T01:07:23+08:00">2019-10-16</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-02-13 00:58:41" itemprop="dateModified" datetime="2023-02-13T00:58:41+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Computer-Science/" itemprop="url" rel="index"><span itemprop="name">Computer Science</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>6.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>6 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>正则表达式是一种描述<em>句法规则</em>的语言。在学习正则表达式的时候，
+直接从某种程序语言的正则表达式 API 入手的我总感觉正则表达式非常复杂，
+难以掌握。因此，我决定从另外一种角度重新审视一下正则表达式。</p>
+<p>本文将会从正则表达式的数学原理出发，
+看正则表达式如何仅仅从用 3 种基本运算就能够表示各种各样的句法规则。</p>
+<span id="more"></span>
+<p>通过本文，你将会了解：</p>
+<ul>
+<li>
+<p>从数学角度重新定义正则表达式；</p>
+</li>
+<li>
+<p>正则表达式的基本运算只有 3 种；</p>
+</li>
+<li>
+<p>正则表达式如何通过这 3 种正则运算扩展；</p>
+</li>
+<li>
+<p>如何构造一个复杂的正则表达式，如验证电子邮件地址的正则表达式。</p>
+</li>
+</ul>
+<p>本文假定读者有一些集合论的基础，特别需要了解集合的并的概念。</p>
+<h2 id="前言"><a class="header-anchor" href="#前言">¶</a>前言</h2>
+<p>经常，我们需要去提取一些符合一定规则的信息。例如，我们的手机号由 11 位数字组成，
+11 位数字就是一个规则，或者说叫做模式（Pattern）。
+我们可以很容易地理解 11 位数字是什么。但是，计算机却不会简单地理解这一概念。
+因此，我们需要构造一种方法，最好是有明确规则的方法。使用这种方法，
+让计算机知道我们所需要查找的字符串的模式，然后从原始字符串中把所需的信息提取出来。</p>
+<p>美国数学家
+<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Stephen_Cole_Kleene">Stephen Cole Kleene</a>
+教授就发明了这样一种方法——正则表达式。</p>
+<h2 id="前置概念"><a class="header-anchor" href="#前置概念">¶</a>前置概念</h2>
+<p>为了研究正则表达式，我们需要先定义一些前置概念：</p>
+<ol>
+<li>
+<p><em>字母表</em>（Alphabet）：一个<em>符号</em>的有限集合。典型的字母表有像英文字母表 a-z，
+数字字母表 0-9。当然不限定是上述两类。任意符号的有限集合都是字母表。</p>
+</li>
+<li>
+<p><em>字符串</em>（String）：一个由从字母表中抽出的符号组成的有限序列，
+如 abc 就是定义在英文字母表上的字符串。我们用$|s|$表示一个字符串的长度，
+并且定义空字符串$|\epsilon|$是长度为 0 的字符串，即$|\epsilon| = 0$。</p>
+</li>
+<li>
+<p><em>语言</em>（Language）：某个字母表上字符串组成的
+<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Countable_set">可数集</a>。
+如 $L=\{0,1,2,3,4,5,6,7,8,9\}$组成了一种语言，这种语言只包含位数为 1 的数字。
+定义只包含空字符串的语言为$\emptyset$。</p>
+</li>
+</ol>
+<p>可以看到，语言是一个字符串组成的集合，
+我们的目的就是去找到一种方式描述这种语言中字符串的模式。</p>
+<p>在开始正则表达式的探索之前，我们先定义一个字符串之间<em>拼接</em>的操作。这个操作很简单，
+如果字符串$s$与字符串$t$进行拼接，会得到字符串$st$。假如$s=\text{cat}$、
+$t=\text{house}$，那么$st=\text{cathouse}$。
+为了更加简便地表示同一个字符串之间的拼接操作，这里定义一个类似数学上指数的操作，
+令$s$为字符串，那么定义$s^n=\underbrace{s \ldots s}_{n个}$。
+可以简单理解为$s$的$n$次重复。</p>
+<h2 id="基本运算"><a class="header-anchor" href="#基本运算">¶</a>基本运算</h2>
+<p>有了前置概念之后，我们将会定义 3 个语言之间的基本运算，有了这 3 个运算
+，我们可以使用一些基本的语言来表达出更加高级的语言。
+比如使用数字作为基本语言，表达出 11 位手机号。下面$L$，$M$均表示一种语言。
+这三种运算分别是：</p>
+<ol>
+<li>
+<p>$L$与$M$的并：$L\cup M=\{s|s \in L 或 s \in M\}$</p>
+</li>
+<li>
+<p>$L$与$M$的拼接：$LM = \{st | s \in L 且 t \in M\}$</p>
+</li>
+<li>
+<p>$L$与$M$的 Kleene 闭包:$L^*=\cup_{i=0}^{\infty}L^i$</p>
+</li>
+</ol>
+<p>其中$\cup{i=0}^{\infty}L^i=L^0 \cup L^1 \cup \ldots$，$L^n = \underbrace{L \ldots L}_{n个}$。</p>
+<p>通过语言之间的并操作，我们可以通过两个基本语言扩展成一个范围更大的语言。
+如使用一个包含大写字母与小写字母的语言$L=\{A,\ldots,Z,a, \ldots, z\}$与
+包含数字的语言$D=\{0,\ldots,9\}$，
+通过并操作我们可以获得一个既包含大小写字母也包含数字的语言
+$L\cup D = \{A, \ldots, Z, a, \ldots, z,0,\ldots,9\}$。</p>
+<p>接下来是语言之间的拼接操作。从定义可以看到，拼接操作产生了类似
+<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Cartesian_product">笛卡尔积</a>的效果。
+拼接操作可以极大地扩展语言。例如$LM$就产生了一个长度为 2 的字符串，
+其中第 1 位是字母，第 2 位是数字。显然，字符串$\text{a1} \in LM$。</p>
+<p>最后一种操作是 Kleene 闭包，这个操作可以将语言自身从 0 次重复（空语言$\emptyset$）
+到无限次重复产生的所有语言并起来。如$D^*=D^0 \cup D^1 \cup D^2, \ldots$，
+$D^0$是一个只包含的空字符串的语言，$D^1$是一个只包含 1 位数字的语言，
+$D^2$是一个只包含 2 位数字的语言，一直到$D^{\infty}$，
+因此$D^*$表示所有正整数加上空字符串。</p>
+<h3 id="通过基本运算来表示另外一种语言"><a class="header-anchor" href="#通过基本运算来表示另外一种语言">¶</a>通过基本运算来表示另外一种语言</h3>
+<p>有了上一节提到的 3 种运算，再定义一些基本语言，
+我们就可以用这些运算来表示另外一种符合某种模式的语言。为了简单起见，
+我们这一节还是使用前面定义的两种基本语言，
+字母语言$L=\{A,\ldots,Z,a, \ldots, z\}$，数字语言$D=\{0,\ldots,9\}$。</p>
+<p>现在我们想表示一个即包含字母也包含数字的语言，我们该怎么表示呢？
+显然，我们可以使用$L\cup D$。为了简化表述，我们接下来用语言中字符串的模式来表示语言本身。</p>
+<p>接下来，我们想要表示一个包含长度为 2 的仅包含字母的字符串，该怎么表示？显然，
+使用一次拼接就可以$L^2=LL$。长度增加到 3 ？再加一次拼接，使用$L^3$就可以表示。
+那么增加到$n$位？那么我们就拼接$n-1$次，使用$L^n$。最后，
+我们想表示一个不固定长度仅包含字母的字符串（可以包含空字符串），使用 Kleene 闭包$D^*$即可
+。使用这些技巧，我们可以表示$n$次重复的字符串。</p>
+<p>最后，我们把这些运算结合起来，可以表示模式更加复杂的语言：</p>
+<ul>
+<li>
+<p>$L(L \cup D)^3$：以字母开头的一个长度为 4 的字符串，后 3 位可以由数字与字母组成；</p>
+</li>
+<li>
+<p>$DD^*$：所有正整数（由于与一个$D$进行了拼接，不含空字符串）；</p>
+</li>
+<li>
+<p>$L^3 \cup L^4 \cup L^5$：由 3 到 5 个字母组成；</p>
+</li>
+<li>
+<p>$\emptyset \cup L^1$：由 0 到 1 个字母组成。</p>
+</li>
+</ul>
+<p>下面有一个小问题，如果要表达一个以两个字母开头，两个数字结尾的字符串？</p>
+<p>如果对正则表达式的语法比较熟悉的同学可能已经发现了，
+在正则表达式中对应上述几种常见模式的简写。</p>
+<h2 id="正则表达式"><a class="header-anchor" href="#正则表达式">¶</a>正则表达式</h2>
+<p>到这里，我们已经掌握了正则表达式背后最基本的数学原理了。没错，就那么简单。
+接下来，为了进一步形式化我们上面用集合语言表达的想法，就得出了正则表达式，
+它包含一套运算，以及一套优先级的定义，使得我们可以简化在大部分情况下需要的括号。</p>
+<h3 id="运算"><a class="header-anchor" href="#运算">¶</a>运算</h3>
+<p>基本运算还是上面提到的 3 种，但是变换了符号：</p>
+<ol>
+<li>
+<p>并：$(r)|(s)=L(r) \cup L(s)$</p>
+</li>
+<li>
+<p>拼接：$(r)(s)=L(r)L(s)$</p>
+</li>
+<li>
+<p>Kleene 闭包：$(r)^*=(L(r))^*$</p>
+</li>
+<li>
+<p>$(r) = L(r)$</p>
+</li>
+</ol>
+<p>第 4 种运算的出现是为了让某种语言的表示与语言本身分开，
+如我们可以使用<code>\d</code>代表一个数字语言$D$。这么的话就有<code>(\d) = L(\d) = D</code></p>
+<h3 id="运算优先级"><a class="header-anchor" href="#运算优先级">¶</a>运算优先级</h3>
+<p>通过设定合适的优先级，可以免去大部分表示优先级的括号的需要，我们设定的优先级如下：</p>
+<ol>
+<li>
+<p>一元运算符 Kleene 闭包$*$具有最高的优先级，具有左结合性；</p>
+</li>
+<li>
+<p>拼接运算符有第二高的优先级，具有左结合性；</p>
+</li>
+<li>
+<p>并操作符$|$具有最低的优先级，具有左结合性；</p>
+</li>
+</ol>
+<p>遵循上述运算优先级，我们可以把$(a)|((b)^*(c))$简化为$a|bc$。</p>
+<p>到这里，我们已经完全掌握了如何使用正则表达式去表示某种模式。</p>
+<h2 id="实际编程语言中正则表达式的使用"><a class="header-anchor" href="#实际编程语言中正则表达式的使用">¶</a>实际编程语言中正则表达式的使用</h2>
+<p>为了便于使用，编程语言中的正则表达式对两个方面进行了扩展。第一，
+为常用的模式定义了新的运算；第二，为一些常用的基本语言提供了简便表示方法。
+下面以 JavaScript 为例：</p>
+<p>新的运算包括：</p>
+<ol>
+<li>
+<p>含空集的不定长度字符串$LL^*$，我们将它表示为$L^+$，也被称为正闭包（Positive Closure）。</p>
+</li>
+<li>
+<p>长度在一定范围内的字符串$L\{m,n\}=\cup_{i=m}^{n}L^i$</p>
+</li>
+<li>
+<p>可选字符串，空字符串或者长度为 1 的字符串$L?=\emptyset | L$</p>
+</li>
+</ol>
+<p>新的常见基本语言表示方法：</p>
+<ol>
+<li>
+<p>通配<code>.</code>，任意除了<code>\n</code>、<code>\r</code>、<code>\u2028</code>（<a target="_blank" rel="noopener" href="https://codepoints.net/U+2028">LINE SEPARATOR</a>）、
+<code>\u2029</code>(<a target="_blank" rel="noopener" href="https://codepoints.net/U+2029">PARAGRAPH SEPARATOR</a>)之外的字符。</p>
+</li>
+<li>
+<p>字符集<code>[abc]</code>：<code>[abc]</code>是$a|b|c$的简便写法。在字符集中通过<code>-</code>字符可以指定一个字符范围。</p>
+</li>
+<li>
+<p>数字<code>\d</code>：<code>[0-9]</code></p>
+</li>
+<li>
+<p>数字、大小写以及下划线<code>\w</code>：<code>[a-zA-Z0-9_]</code></p>
+</li>
+<li>
+<p>取反<code>[^abc]</code></p>
+</li>
+</ol>
+<h2 id="demo：验证电子邮件地址"><a class="header-anchor" href="#demo：验证电子邮件地址">¶</a>Demo：验证电子邮件地址</h2>
+<p>作为练习，我们用正则表达式来符合 RFC-5321 规定的电子邮件地址，进而验证一个地址是否符合标准。</p>
+<p>根据<a target="_blank" rel="noopener" href="https://tools.ietf.org/html/rfc5321">RFC-5321(Simple Mail Transfer Protocol)</a>：
+合法的电子邮件地址的格式为<code>&lt;local-part&gt;@&lt;domain&gt;</code>，这里使用<code>&lt;name-regexp&gt;</code>
+表示一个子正则表达式，定义如下：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"># local-part可以是两种字符串&lt;Dot-String&gt;或者&lt;Quoted-String&gt;之一</span><br><span class="line">&lt;local-part&gt; = &lt;Dot-string&gt;|&lt;Quoted-string&gt;</span><br><span class="line"></span><br><span class="line"># Dot-String必须由&lt;Atom&gt;开头，可以用.进行分隔，但是.不能是最后一位</span><br><span class="line"># 如user.name.就不行</span><br><span class="line">&lt;Dot-string&gt; = &lt;Atom&gt;(&lt;Atom&gt;\.)*</span><br><span class="line"></span><br><span class="line"># Auto是长度为1以上由&lt;atext&gt;组成的字符串</span><br><span class="line">&lt;Atom&gt; = &lt;atext&gt;&#123;1,&#125;</span><br><span class="line">&lt;atext&gt; = [a-zA-Z0-9!#$%&amp;&#x27;*+-/=?^_`&#123;&#125;\|~]</span><br><span class="line"></span><br><span class="line"># Quoted-string必须由两个引号&quot;括起来，其中的内容是&lt;QcontentSMTP&gt;*，如&quot;hello world&quot;</span><br><span class="line">&lt;Quoted-string&gt; = &lt;DQUOTE&gt;&lt;QcontentSMTP&gt;*&lt;DQUOTE&gt;</span><br><span class="line"></span><br><span class="line"># QContentSTMP可以是两种字符串之一，&lt;qtextSTMP&gt;或者&lt;quoted-pairSTMP&gt;</span><br><span class="line">&lt;QContentSTMP&gt; = &lt;qtextSTMP&gt;|&lt;quoted-pairSTMP&gt;</span><br><span class="line"></span><br><span class="line"># quoted-pairSTMP是斜杠加上斜杠加任何可显示ASCII字符，如/r、/n、/i等</span><br><span class="line">&lt;quoted-pairSTMP&gt; = /[\x20-\x7e]</span><br><span class="line"></span><br><span class="line"># qtextSTMP是除了引号&quot;、反斜杠\之外的所有可显示字符</span><br><span class="line">&lt;qtextSTMP&gt; = [\x20-\x21\x23-\x5b\x5d-\x7e]</span><br><span class="line"></span><br><span class="line">&lt;DQUOTE&gt; = &quot;</span><br><span class="line"></span><br><span class="line"># domain必须由&lt;sub-domain&gt;开头，允许后面加.&lt;sub-domain&gt;，如github.com</span><br><span class="line">&lt;domain&gt; = &lt;sub-domain&gt;(\.&lt;sub-domain&gt;)*</span><br><span class="line"></span><br><span class="line"># sub-domain必须有一个&lt;Let-dig&gt;开头，后面接一个&lt;Ldh-str&gt;</span><br><span class="line">&lt;sub-domain&gt; = &lt;Let-dig&gt;&lt;Ldh-str&gt;?</span><br><span class="line"></span><br><span class="line">&lt;Let-dig&gt; = [a-zA-Z0-9]</span><br><span class="line"></span><br><span class="line"># Ldh-str是一个不能用连字号-结尾的字符串，综合来说意味着sub-domain可以</span><br><span class="line"># 包含连字符但是不能是开头和结尾的位置。</span><br><span class="line">&lt;Ldh-str&gt; = [a-zA-Z0-9-]*&lt;Let-dig&gt;</span><br></pre></td></tr></table></figure>
+<p>按照标准，我们可以逐步从子正则表达式入手，逐步地拼接成更加高级的子表达式，
+直至形成最终的表达式。
+由于这个正则表达式非常复杂，我们使用模板字符串来一步一步的拼接形成最后的表达式，代码如下:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> atext = <span class="string">`[a-zA-Z0-9!#$%&amp;&#x27;*+-/=?^_\`&#123;&#125;\|~]`</span></span><br><span class="line"><span class="keyword">const</span> atom = <span class="string">`<span class="subst">$&#123;atext&#125;</span>&#123;1,&#125;`</span></span><br><span class="line"><span class="comment">// 由于运算优先级的原因，添加给atom一个non-capture group，下面也有很多同样的用法</span></span><br><span class="line"><span class="keyword">const</span> dotString = <span class="string">`<span class="subst">$&#123;atom&#125;</span>(?:<span class="subst">$&#123;atom&#125;</span>\\.)*`</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> dQuote = <span class="string">&#x27;&quot;&#x27;</span></span><br><span class="line"><span class="keyword">const</span> qtextSTMP = <span class="string">`[\\x20-\\x21\\x23-\\x5b\\x5d-\\x7e]`</span></span><br><span class="line"><span class="keyword">const</span> quotedPairSTMP = <span class="string">`\\/[\\x20-\\x7e]`</span></span><br><span class="line"><span class="keyword">const</span> qcontentSMTP = <span class="string">`(?:<span class="subst">$&#123;qtextSTMP&#125;</span>)|(?:<span class="subst">$&#123;quotedPairSTMP&#125;</span>)`</span></span><br><span class="line"><span class="keyword">const</span> quotedString = <span class="string">`<span class="subst">$&#123;dQuote&#125;</span>(?:<span class="subst">$&#123;qcontentSMTP&#125;</span>)*<span class="subst">$&#123;dQuote&#125;</span>`</span></span><br><span class="line"><span class="keyword">const</span> localPart = <span class="string">`(?:<span class="subst">$&#123;dotString&#125;</span>)|(?:<span class="subst">$&#123;quotedString&#125;</span>)`</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> letDig = <span class="string">`[a-zA-Z0-9]`</span></span><br><span class="line"><span class="keyword">const</span> ldhStr = <span class="string">`[a-zA-Z0-9-]*<span class="subst">$&#123;letDig&#125;</span>`</span></span><br><span class="line"><span class="keyword">const</span> subDomain = <span class="string">`<span class="subst">$&#123;letDig&#125;</span>(?:<span class="subst">$&#123;ldhStr&#125;</span>)?`</span></span><br><span class="line"><span class="keyword">const</span> domain = <span class="string">`(?:<span class="subst">$&#123;subDomain&#125;</span>)(?:\\.<span class="subst">$&#123;subDomain&#125;</span>)*`</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="title function_">verifyEmail</span> = emailAddr =&gt; &#123;</span><br><span class="line">  <span class="comment">// 因为正则太复杂，因此使用构造函数形式，以便使用模板字符串</span></span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">RegExp</span>(<span class="string">`(?:<span class="subst">$&#123;localPart&#125;</span>)@(?:<span class="subst">$&#123;domain&#125;</span>)`</span>).<span class="title function_">test</span>(emailAddr)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title function_">verifyEmail</span>(<span class="string">&#x27;@h-2.com&#x27;</span>)) <span class="comment">// false</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title function_">verifyEmail</span>(<span class="string">&#x27;a_user@h-2.com&#x27;</span>)) <span class="comment">// true</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title function_">verifyEmail</span>(<span class="string">&#x27;a_user@.com&#x27;</span>)) <span class="comment">// false</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title function_">verifyEmail</span>(<span class="string">&#x27;a_user@com&#x27;</span>)) <span class="comment">//true</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title function_">verifyEmail</span>(<span class="string">&#x27;a_user@&#x27;</span>)) <span class="comment">// true</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title function_">verifyEmail</span>(<span class="string">&#x27;&quot;quoted user&quot;@ayase.moe&#x27;</span>)) <span class="comment">// true</span></span><br><span class="line"><span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="title function_">verifyEmail</span>(<span class="string">&#x27;&quot;quoted_with_blackslash/uuser&quot;@ayase.moe&#x27;</span>)) <span class="comment">// true</span></span><br></pre></td></tr></table></figure>
+<p>现在我们已经写好了一个可能是正则表达式中最难的一个——验证邮箱地址的正则。</p>
+<h2 id="总结"><a class="header-anchor" href="#总结">¶</a>总结</h2>
+<p>在本文中，我们从几个基本概念——字母表、字符串以及语言出发，
+介绍了构成正则表达式的 3 种基本操作——并、拼接与 Kleene 闭包。
+我们使用了这 3 种基本操作，从字母语言与数字语言出发，
+表达了一些具有复杂模式的语言。</p>
+<p>通过重新定义基本运算以及运算优先级正式化了正则表达式，
+并且探讨了正则表达式的一些扩展。最后我们使用了 JS 的正则表达式，
+实现了一个符合 RFC-5321 的电子邮件地址验证器。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Qingyu Deng
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ayase.moe/2019/10/15/learn-regex-from-a-mathematic-perspective/" title="重新学习正则表达式——从理论角度">https://ayase.moe/2019/10/15/learn-regex-from-a-mathematic-perspective/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Regular-Expression/" rel="tag"># Regular Expression</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2019/10/13/faster-repeat-algorithm/" rel="prev" title="更快的字符串复制方法">
+                  <i class="fa fa-chevron-left"></i> 更快的字符串复制方法
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2019/11/01/weathering-with-you-review/" rel="next" title="「只要有爱，世界与我何干」——《天气之子》观后感">
+                  「只要有爱，世界与我何干」——《天气之子》观后感 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">127k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:55</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Ayase-252/Ayase-252.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ayase.moe","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.14.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":true,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="在Web开发中，Scroll事件是一个很重要的事件。通过Scroll事件，我们可以通过一些方式获知视口在页面的位置。知道这个信息可以帮助我们判断很多东西，如用户即将浏览到页面底部，是不是该调用API加载一些新的内容等等。 在实际运用中，scroll事件常常带来很多迷惑。最近在开发练手的博客项目时就遇到了一个问题，在Vue中的组件绑定scroll事件，事件处理函数似乎不会触发。这个问题好像困扰过很多">
+<meta property="og:type" content="article">
+<meta property="og:title" content="你所不知道的scroll事件：为什么scroll事件会失效？">
+<meta property="og:url" content="https://ayase.moe/2018/11/20/scroll-event/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="在Web开发中，Scroll事件是一个很重要的事件。通过Scroll事件，我们可以通过一些方式获知视口在页面的位置。知道这个信息可以帮助我们判断很多东西，如用户即将浏览到页面底部，是不是该调用API加载一些新的内容等等。 在实际运用中，scroll事件常常带来很多迷惑。最近在开发练手的博客项目时就遇到了一个问题，在Vue中的组件绑定scroll事件，事件处理函数似乎不会触发。这个问题好像困扰过很多">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ayase.moe/2018/11/20/scroll-event/capture-bubble-phase.png">
+<meta property="og:image" content="https://ayase.moe/2018/11/20/scroll-event/result-in-window.png">
+<meta property="og:image" content="https://ayase.moe/2018/11/20/scroll-event/demo.png">
+<meta property="og:image" content="https://ayase.moe/2018/11/20/scroll-event/result-in-element.png">
+<meta property="og:image" content="https://ayase.moe/2018/11/20/scroll-event/scroll-event-flow.png">
+<meta property="article:published_time" content="2018-11-20T15:46:28.000Z">
+<meta property="article:modified_time" content="2023-02-12T16:58:41.268Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="Web Development">
+<meta property="article:tag" content="JavaScript">
+<meta property="article:tag" content="Event">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ayase.moe/2018/11/20/scroll-event/capture-bubble-phase.png">
+
+
+<link rel="canonical" href="https://ayase.moe/2018/11/20/scroll-event/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ayase.moe/2018/11/20/scroll-event/","path":"2018/11/20/scroll-event/","title":"你所不知道的scroll事件：为什么scroll事件会失效？"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>你所不知道的scroll事件：为什么scroll事件会失效？ | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-85059083-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Ayase-252's wonderland</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#javascript%E4%BA%8B%E4%BB%B6%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.</span> <span class="nav-text">JavaScript事件模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BD%93scroll%E7%9A%84%E7%9B%AE%E6%A0%87%E5%85%83%E7%B4%A0%E4%B8%BAdocument-defaultview%E6%97%B6"><span class="nav-number">2.</span> <span class="nav-text">当scroll的目标元素为document.defaultView时</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BD%93scroll%E7%9A%84%E7%9B%AE%E6%A0%87%E5%85%83%E7%B4%A0%E6%98%AF%E5%85%83%E7%B4%A0%E6%97%B6"><span class="nav-number">3.</span> <span class="nav-text">当scroll的目标元素是元素时</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%BB%BA%E8%AE%AE"><span class="nav-number">4.1.</span> <span class="nav-text">建议</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:i@ayase-lab.com" title="E-Mail → mailto:i@ayase-lab.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener me" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2018/11/20/scroll-event/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="你所不知道的scroll事件：为什么scroll事件会失效？ | Ayase-252's wonderland">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          你所不知道的scroll事件：为什么scroll事件会失效？
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-11-20 23:46:28" itemprop="dateCreated datePublished" datetime="2018-11-20T23:46:28+08:00">2018-11-20</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-02-13 00:58:41" itemprop="dateModified" datetime="2023-02-13T00:58:41+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Programming/" itemprop="url" rel="index"><span itemprop="name">Programming</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>6.1k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>6 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>在Web开发中，<code>Scroll</code>事件是一个很重要的事件。通过<code>Scroll</code>事件，我们可以通过一些方式获知视口在页面的位置。知道这个信息可以帮助我们判断很多东西，如用户即将浏览到页面底部，是不是该调用API加载一些新的内容等等。</p>
+<p>在实际运用中，<code>scroll</code>事件常常带来很多迷惑。最近在开发练手的博客项目时就遇到了一个问题，在<code>Vue</code>中的组件绑定<code>scroll</code>事件，事件处理函数似乎不会触发。这个问题好像困扰过很多人，谷歌<code>Vue 滚动事件失效</code>能发现很多相关内容。比如说<a target="_blank" rel="noopener" href="https://segmentfault.com/q/1010000009119633">这一个问题</a>，可以一个个去试他们给出的解决方案，总会发现几个有用的。但是作为开发者，知其然还要知其所以然。那么，本文就来探究一下这个<code>scroll</code>事件的背后到底有什么不为人知的东西。</p>
+<span id="more"></span>
+<h2 id="javascript事件模型"><a class="header-anchor" href="#javascript事件模型">¶</a>JavaScript事件模型</h2>
+<p>大家都知道，JavaScript事件有两个阶段——（1）<strong>捕获阶段(Capture Phase)</strong>（2）<strong>冒泡阶段(Bubble Phase)</strong>。捕获阶段是事件从<code>document</code>到传递到目标元素的过程，而冒泡阶段是事件从目标元素传递到<code>document</code>的过程。下面是《高程》上的一张图，很明了地描述了整个过程。</p>
+<p><img src="/2018/11/20/scroll-event/capture-bubble-phase.png" alt="capture-bubble-phase"></p>
+<p>在平时，大家一般是监听事件的冒泡阶段，即<code>elem.addEventListener('scroll', handler)</code>。<code>Vue</code>中也提供了<code>v-on</code>指令监听某个事件，默认用的也是事件的冒泡阶段。那么这里会有什么坑呢？</p>
+<p>根据<a target="_blank" rel="noopener" href="https://developer.mozilla.org/zh-CN/docs/Web/Events/scroll">MDN</a>对<code>scroll</code>事件的描述，我们发现了惊人的事实：</p>
+<blockquote>
+<p>冒泡: <code>element</code>的<code>scroll</code>事件<strong>不冒泡</strong>, 但是<code>document</code>的<code>defaultView</code>的<code>scroll</code>事件冒泡</p>
+</blockquote>
+<p>这句话的意思就是说，如果<code>scroll</code>的目标元素是一个元素的话，比如说是一个<code>div</code>元素。那么此时事件只有从<code>document</code>到<code>div</code>的捕获阶段以及<code>div</code>的冒泡阶段。如果尝试在父级监视<code>scroll</code>的冒泡阶段监视这一事件是无效的。如果<code>scroll</code>是由<code>document.defaultView</code>（目前<code>document</code>关联的<code>window</code>对象）产生的有冒泡阶段。但是由于其本身就是DOM树里最顶级的对象，因此只能在<code>window</code>里监视<code>scroll</code>的捕获阶段以及冒泡阶段。</p>
+<p>注意到在元素为目标元素时，也在目标元素上监视<code>scroll</code>事件的捕获阶段以及冒泡阶段。两种情况其实内在是一致的。接下来我们会通过两个Demo证明这一点。</p>
+<h2 id="当scroll的目标元素为document-defaultview时"><a class="header-anchor" href="#当scroll的目标元素为document-defaultview时">¶</a>当scroll的目标元素为document.defaultView时</h2>
+<p>这是最常见的情形，比如知乎，可以在console里执行<code>window.addEventListener('scroll', e =&gt; console.log(e.target), true)</code>，然后滑动滚动条就可以看见效果。</p>
+<p>这里我们自己写一个小型的HTML文档。</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;root&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;scroll-in-window.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>（大段复制代码搞得我像灌水一样，反正是自己博客，灌就灌吧）那么多的<code>Hello world</code>是为了让浏览器产生滚动条，所需要的数量由屏幕分辨率而定。。</p>
+<p>接下来，我们分别在<code>window</code>与<code>div#root</code>上监听<code>scroll</code>事件的捕获阶段以及冒泡阶段；</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// scroll-in-window.js</span></span><br><span class="line"></span><br><span class="line"><span class="variable language_">window</span>.<span class="title function_">addEventListener</span>(<span class="string">&#x27;scroll&#x27;</span>, <span class="function"><span class="params">e</span> =&gt;</span> <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;scroll handler is triggered in window during capture phase.&#x27;</span>), <span class="literal">true</span>)</span><br><span class="line"><span class="variable language_">window</span>.<span class="title function_">addEventListener</span>(<span class="string">&#x27;scroll&#x27;</span>, <span class="function"><span class="params">e</span> =&gt;</span> <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;scroll handler is triggered in window during bubble phase.&#x27;</span>))</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> root = <span class="variable language_">document</span>.<span class="title function_">getElementById</span>(<span class="string">&#x27;root&#x27;</span>)</span><br><span class="line">root.<span class="title function_">addEventListener</span>(<span class="string">&#x27;scroll&#x27;</span>, <span class="function"><span class="params">e</span> =&gt;</span> <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;scroll handler is triggered in root during capture phase.&#x27;</span>), <span class="literal">true</span>)</span><br><span class="line">root.<span class="title function_">addEventListener</span>(<span class="string">&#x27;scroll&#x27;</span>, <span class="function"><span class="params">e</span> =&gt;</span> <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;scroll handler is triggered in root during bubble phase.&#x27;</span>))</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<p>在Chrome下运行如下：
+<img src="/2018/11/20/scroll-event/result-in-window.png" alt="result-in-window"></p>
+<p>这里我也准备了在线Demo，请戳<a target="_blank" rel="noopener" href="https://codepen.io/ayase-252/pen/xQpGKj?editors=1011">这里</a></p>
+<p>可以看到在全程只有<code>window</code>上监听<code>scroll</code>的<strong>捕获阶段</strong>以及<strong>冒泡阶段</strong>的回调函数执行了。这验证之前的结论：</p>
+<blockquote>
+<p>如果<code>scroll</code>是由<code>document.defaultView</code>（目前<code>document</code>关联的<code>window</code>对象）产生的有冒泡阶段。但是由于其本身就是DOM树里最顶级的对象，因此只能在<code>window</code>里监视<code>scroll</code>的捕获阶段以及冒泡阶段。</p>
+</blockquote>
+<h2 id="当scroll的目标元素是元素时"><a class="header-anchor" href="#当scroll的目标元素是元素时">¶</a>当scroll的目标元素是元素时</h2>
+<p>这种情况也常见，我给出一种示例：一个双栏布局，左侧为导航栏，右侧为内容，父容器使用<code>Flex</code>布局，要求导航栏不随内容的滑动而滑动。HTML文档如下：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;!DOCTYPE <span class="keyword">html</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">html</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">head</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">title</span>&gt;</span>Scroll In Element<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">style</span>&gt;</span><span class="language-css"></span></span><br><span class="line"><span class="language-css">    <span class="selector-tag">body</span> &#123;</span></span><br><span class="line"><span class="language-css">      <span class="attribute">margin</span>: <span class="number">0</span>;</span></span><br><span class="line"><span class="language-css">    &#125;</span></span><br><span class="line"><span class="language-css"></span></span><br><span class="line"><span class="language-css">    <span class="selector-id">#wrapper</span> &#123;</span></span><br><span class="line"><span class="language-css">      <span class="attribute">width</span>: <span class="number">100%</span>;</span></span><br><span class="line"><span class="language-css">      <span class="attribute">height</span>: <span class="number">100vh</span>;</span></span><br><span class="line"><span class="language-css">      <span class="attribute">display</span>: flex;</span></span><br><span class="line"><span class="language-css">      <span class="attribute">overflow</span>: hidden;</span></span><br><span class="line"><span class="language-css">    &#125;</span></span><br><span class="line"><span class="language-css"></span></span><br><span class="line"><span class="language-css">    <span class="selector-id">#left-col</span> &#123;</span></span><br><span class="line"><span class="language-css">      <span class="attribute">overflow</span>: hidden;</span></span><br><span class="line"><span class="language-css">      <span class="attribute">flex</span>: <span class="number">0</span> <span class="number">0</span> <span class="number">300px</span>;</span></span><br><span class="line"><span class="language-css">      <span class="attribute">background-color</span>: aqua;</span></span><br><span class="line"><span class="language-css">    &#125;</span></span><br><span class="line"><span class="language-css"></span></span><br><span class="line"><span class="language-css">    <span class="selector-id">#right-col</span> &#123;</span></span><br><span class="line"><span class="language-css">      <span class="attribute">flex</span>: <span class="number">1</span>;</span></span><br><span class="line"><span class="language-css">      <span class="attribute">overflow</span>: auto;</span></span><br><span class="line"><span class="language-css">    &#125;</span></span><br><span class="line"><span class="language-css">  </span><span class="tag">&lt;/<span class="name">style</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">head</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">body</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;wrapper&quot;</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;left-col&quot;</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">nav</span>&gt;</span></span><br><span class="line">        barabara</span><br><span class="line">      <span class="tag">&lt;/<span class="name">nav</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">div</span> <span class="attr">id</span>=<span class="string">&quot;right-col&quot;</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">p</span>&gt;</span>Hello world<span class="tag">&lt;/<span class="name">p</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">script</span> <span class="attr">src</span>=<span class="string">&quot;scroll-in-element.js&quot;</span>&gt;</span><span class="tag">&lt;/<span class="name">script</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">body</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">html</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<p>效果如下：
+<img src="/2018/11/20/scroll-event/demo.png" alt="demo"></p>
+<p>此时<code>scroll</code>事件的目标元素是<code>div#right-col</code>。接下来我们，分别在<code>window</code>,<code>div#wrapper</code>,<code>div#right-col</code>上监听<code>scroll</code>的捕获阶段以及冒泡阶段。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="title function_">log</span> = (<span class="params">elem, phase</span>) =&gt; &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">`scroll handler is trigged in <span class="subst">$&#123;elem&#125;</span> during <span class="subst">$&#123;phase&#125;</span>`</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="title function_">bindEvent</span> = (<span class="params">elem, elemName</span>)  =&gt; &#123;</span><br><span class="line">  elem.<span class="title function_">addEventListener</span>(<span class="string">&#x27;scroll&#x27;</span>, log.<span class="title function_">bind</span>(<span class="literal">null</span>, elemName, <span class="string">&#x27;capture&#x27;</span>), <span class="literal">true</span>)</span><br><span class="line">  elem.<span class="title function_">addEventListener</span>(<span class="string">&#x27;scroll&#x27;</span>, log.<span class="title function_">bind</span>(<span class="literal">null</span>, elemName, <span class="string">&#x27;bubble&#x27;</span>))</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="title function_">bindEvent</span>(<span class="variable language_">window</span>, <span class="string">&#x27;window&#x27;</span>)</span><br><span class="line"><span class="keyword">const</span> wrapper = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;#wrapper&#x27;</span>)</span><br><span class="line"><span class="title function_">bindEvent</span>(wrapper, <span class="string">&#x27;wrapper&#x27;</span>)</span><br><span class="line"><span class="keyword">const</span> rightCol = <span class="variable language_">document</span>.<span class="title function_">querySelector</span>(<span class="string">&#x27;#right-col&#x27;</span>)</span><br><span class="line"><span class="title function_">bindEvent</span>(rightCol, <span class="string">&#x27;rightCol&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<p>在Chrome上运行如下：
+<img src="/2018/11/20/scroll-event/result-in-element.png" alt="result-in-element"></p>
+<p>这里我也准备了在线Demo，请戳<a target="_blank" rel="noopener" href="https://codepen.io/ayase-252/pen/BGJNXR?editors=1011#">这里</a></p>
+<p>这里的运行结果很清楚的展示了<code>scroll</code>事件的传递轨迹，也证明了展示了我们之前说的：</p>
+<blockquote>
+<p>如果<code>scroll</code>的目标元素是一个元素的话，比如说是一个<code>div</code>元素。那么此时事件只有从<code>document</code>到<code>div</code>的捕获阶段以及<code>div</code>的冒泡阶段。</p>
+</blockquote>
+<h2 id="总结"><a class="header-anchor" href="#总结">¶</a>总结</h2>
+<p>还用《高程》里那一副图总结一下<code>scroll</code>的事件流向：</p>
+<p><img src="/2018/11/20/scroll-event/scroll-event-flow.png" alt="scroll-event-flow"></p>
+<p>当触发元素为<code>div</code>时，事件从<code>document</code>（在浏览器的实现上是<code>window</code>）开始向下传递，直到目标元素，此时捕获阶段结束。接下来在目标元素上进行一次冒泡阶段（4），然后不再冒泡。</p>
+<p>对于<code>document.defaultView</code>产生的<code>scroll</code>事件一样，由于其本身就是顶层元素，在其本身上冒泡可以视为冒泡阶段结束。</p>
+<h3 id="建议"><a class="header-anchor" href="#建议">¶</a>建议</h3>
+<p>综上所述，在debug<code>scroll</code>事件失效问题的时候要清楚两个东西：</p>
+<ol>
+<li><code>scroll</code>事件的目标元素是什么？也可以说谁产生了<code>scroll</code>事件。如果实在不清楚的话，可以用Chrome开发者工具的<code>Performance</code>模块录制一下滚动动作，然后在<code>Event Log</code>里查看<code>scroll</code>事件的目标元素。</li>
+<li>监听<code>scroll</code>事件的元素是否在<code>scroll</code>事件的传递路径上，是否监听了正确的阶段？</li>
+</ol>
+<p>弄清楚这些基本上就能够判定为什么<code>scroll</code>事件的回调触发不了了。</p>
+<p>另外有一个万能的方法，就是在<code>window</code>上监听<code>scroll</code>的捕获阶段，即<code>window.addEventListener('scroll', handler, true)</code>。这也是很多类似问题中答主回答的答案。希望在看完本文之后能对其原理有所了解。</p>
+<h2 id="参考资料"><a class="header-anchor" href="#参考资料">¶</a>参考资料</h2>
+<ol>
+<li>Nicholas C. Zakas, Professional JavaScript for Web Developers, Third Edition</li>
+<li><a target="_blank" rel="noopener" href="https://developer.mozilla.org/zh-CN/docs/Web/Events/scroll">scroll - MDN</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Qingyu Deng
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ayase.moe/2018/11/20/scroll-event/" title="你所不知道的scroll事件：为什么scroll事件会失效？">https://ayase.moe/2018/11/20/scroll-event/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Web-Development/" rel="tag"># Web Development</a>
+              <a href="/tags/JavaScript/" rel="tag"># JavaScript</a>
+              <a href="/tags/Event/" rel="tag"># Event</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/11/15/https-tls/" rel="prev" title="一文弄懂HTTPS（II）-TLS/SSL协议握手">
+                  <i class="fa fa-chevron-left"></i> 一文弄懂HTTPS（II）-TLS/SSL协议握手
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/11/21/step-by-step-prototype/" rel="next" title="Step by Step —— 解密原型链">
+                  Step by Step —— 解密原型链 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">127k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:55</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Ayase-252/Ayase-252.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

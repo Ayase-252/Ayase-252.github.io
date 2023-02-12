@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ayase.moe","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.14.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":true,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="Koa2里支持两种中间件的写法，一种是使用ES7async&#x2F;await语法的异步函数，这里我们称为异步中间件。一种是使用普通函数语法的普通中间件。尽管说官方支持两种写法，但是在实际应用中，我们可能不大常见普通中间件的写法。为什么呢？">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Koa2中为什么不要使用普通中间件">
+<meta property="og:url" content="https://ayase.moe/2018/11/26/why-not-use-common-middleware-in-koa2/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="Koa2里支持两种中间件的写法，一种是使用ES7async&#x2F;await语法的异步函数，这里我们称为异步中间件。一种是使用普通函数语法的普通中间件。尽管说官方支持两种写法，但是在实际应用中，我们可能不大常见普通中间件的写法。为什么呢？">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-11-26T12:21:25.000Z">
+<meta property="article:modified_time" content="2023-02-12T16:58:41.268Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="Koa">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://ayase.moe/2018/11/26/why-not-use-common-middleware-in-koa2/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ayase.moe/2018/11/26/why-not-use-common-middleware-in-koa2/","path":"2018/11/26/why-not-use-common-middleware-in-koa2/","title":"Koa2中为什么不要使用普通中间件"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>Koa2中为什么不要使用普通中间件 | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-85059083-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Ayase-252's wonderland</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#koa2%E7%9A%84%E4%B8%AD%E9%97%B4%E4%BB%B6%E6%B4%8B%E8%91%B1%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.</span> <span class="nav-text">Koa2的中间件洋葱模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#koa2%E4%B8%AD%E9%97%B4%E4%BB%B6%E6%B4%8B%E8%91%B1%E6%A8%A1%E5%9E%8B%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="nav-number">2.</span> <span class="nav-text">Koa2中间件洋葱模型的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#compose%E5%87%BD%E6%95%B0"><span class="nav-number">2.1.</span> <span class="nav-text">compose函数</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%80%E7%A7%8D%E9%94%99%E8%AF%AF%E7%9A%84%E6%99%AE%E9%80%9A%E4%B8%AD%E9%97%B4%E4%BB%B6%E5%86%99%E6%B3%95"><span class="nav-number">3.</span> <span class="nav-text">一种错误的普通中间件写法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%99%E7%A7%8D%E5%86%99%E6%B3%95%E9%97%AE%E9%A2%98%E5%87%BA%E7%8E%B0%E5%9C%A8%E5%93%AA%EF%BC%9F"><span class="nav-number">3.1.</span> <span class="nav-text">这种写法问题出现在哪？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%82%A3%E4%B9%88%E6%AD%A3%E7%A1%AE%E7%9A%84%E6%99%AE%E9%80%9A%E4%B8%AD%E9%97%B4%E4%BB%B6%E7%9A%84%E5%86%99%E6%B3%95%E6%98%AF%EF%BC%9F"><span class="nav-number">3.2.</span> <span class="nav-text">那么正确的普通中间件的写法是？</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:i@ayase-lab.com" title="E-Mail → mailto:i@ayase-lab.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener me" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2018/11/26/why-not-use-common-middleware-in-koa2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="Koa2中为什么不要使用普通中间件 | Ayase-252's wonderland">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Koa2中为什么不要使用普通中间件
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-11-26 20:21:25" itemprop="dateCreated datePublished" datetime="2018-11-26T20:21:25+08:00">2018-11-26</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-02-13 00:58:41" itemprop="dateModified" datetime="2023-02-13T00:58:41+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Technology/" itemprop="url" rel="index"><span itemprop="name">Technology</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>6.9k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>6 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>Koa2里支持两种中间件的写法，一种是使用ES7<code>async/await</code>语法的<strong>异步函数</strong>，这里我们称为<strong>异步中间件</strong>。一种是使用普通函数语法的<strong>普通中间件</strong>。尽管说官方支持两种写法，但是在实际应用中，我们可能不大常见普通中间件的写法。为什么呢？</p>
+<span id="more"></span>
+<blockquote>
+<p>tl;dr</p>
+<ol>
+<li>普通中间件可以有，但没必要；</li>
+<li>错误的普通中间件写法可能破坏洋葱模型；</li>
+<li>正确的普通中间件的写法可能和想象中的有点不太一样。</li>
+</ol>
+</blockquote>
+<h2 id="koa2的中间件洋葱模型"><a class="header-anchor" href="#koa2的中间件洋葱模型">¶</a>Koa2的中间件洋葱模型</h2>
+<p>大家都知道Koa2的中间件的执行流类似洋葱，即请求会从第一个中间件开始然后暂停在<code>next</code>，接着执行第二个中间件，一直到最后一个中间件暂停在<code>next</code>。接着最后一个中间件从<code>next</code>恢复执行，执行完之后倒数第二个中间件从<code>next</code>的地方恢复执行，一直到第一个中间件从<code>next</code>恢复执行到完毕。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="title class_">Application</span> = <span class="built_in">require</span>(<span class="string">&#x27;koa&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="title function_">middleware_1</span> = <span class="keyword">async</span> (<span class="params">ctx, next</span>) =&gt; &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;middleware_1 before next&#x27;</span>)</span><br><span class="line">    <span class="keyword">await</span> <span class="title function_">next</span>()</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;middleware_1 after next&#x27;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="title function_">middleware_2</span> = <span class="keyword">async</span> (<span class="params">ctx, next</span>) =&gt; &#123;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;middleware_2 before next&#x27;</span>)</span><br><span class="line">    <span class="keyword">await</span> <span class="title function_">next</span>()</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;middleware_2 after next&#x27;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> app = <span class="keyword">new</span> <span class="title class_">Application</span>()</span><br><span class="line">app.<span class="title function_">use</span>(middleware_1)</span><br><span class="line">app.<span class="title function_">use</span>(middleware_2)</span><br><span class="line"></span><br><span class="line">app.<span class="title function_">listen</span>(<span class="number">3000</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// 当有请求经过的时候，console会打印</span></span><br><span class="line"><span class="comment">// middleware_1 before next</span></span><br><span class="line"><span class="comment">// middleware_2 before next</span></span><br><span class="line"><span class="comment">// middleware_2 after next</span></span><br><span class="line"><span class="comment">// middleware_1 after next</span></span><br></pre></td></tr></table></figure>
+<h2 id="koa2中间件洋葱模型的实现"><a class="header-anchor" href="#koa2中间件洋葱模型的实现">¶</a>Koa2中间件洋葱模型的实现</h2>
+<p>这一部分我们简单介绍一下Koa2中间件洋葱模型的实现。当我们使用<code>app.use(middleware)</code>时，其实内部会将<code>middleware</code>推入一个数组保存:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// koa/lib/application.js</span></span><br><span class="line"></span><br><span class="line"><span class="variable language_">module</span>.<span class="property">exports</span> = <span class="keyword">class</span> <span class="title class_">Application</span> <span class="keyword">extends</span> <span class="title class_ inherited__">Emitter</span> &#123;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">  <span class="title function_">use</span>(<span class="params">fn</span>) &#123;</span><br><span class="line">    <span class="comment">// if (typeof fn !== &#x27;function&#x27;) throw new TypeError(&#x27;middleware must be   a function!&#x27;);</span></span><br><span class="line">    <span class="comment">// if (isGeneratorFunction(fn)) &#123;</span></span><br><span class="line">    <span class="comment">//   deprecate(&#x27;Support for generators will be removed in v3. &#x27; +</span></span><br><span class="line">    <span class="comment">//             &#x27;See the documentation for examples of how to convert old middleware &#x27; +</span></span><br><span class="line">    <span class="comment">//             &#x27;https://github.com/koajs/koa/blob/master/docs/migration.md&#x27;);</span></span><br><span class="line">    <span class="comment">//   fn = convert(fn);</span></span><br><span class="line">    <span class="comment">// &#125;</span></span><br><span class="line">    <span class="comment">// debug(&#x27;use %s&#x27;, fn._name || fn.name || &#x27;-&#x27;);</span></span><br><span class="line">    <span class="variable language_">this</span>.<span class="property">middleware</span>.<span class="title function_">push</span>(fn);</span><br><span class="line">    <span class="keyword">return</span> <span class="variable language_">this</span>;</span><br><span class="line">  &#125;</span><br><span class="line">    <span class="comment">//...</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>忽略掉大量检查代码，<code>use</code>就做了一件事情，<code>this.middleware.push(fn)</code>。<code>this.middleware</code>是一个数组。</p>
+<p>接下来，在<code>app.listen(3000)</code>的时候，<code>app.listen</code>会调用原生的<code>http</code>模块，然后使用<code>this.callback()</code>产生一个回调函数在请求到来的时候调用。接下来就是重头戏了，</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">callback</span>(<span class="params"></span>) &#123;</span><br><span class="line">  <span class="keyword">const</span> fn = <span class="title function_">compose</span>(<span class="variable language_">this</span>.<span class="property">middleware</span>);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// if (!this.listenerCount(&#x27;error&#x27;)) this.on(&#x27;error&#x27;, this.onerror);</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">const</span> <span class="title function_">handleRequest</span> = (<span class="params">req, res</span>) =&gt; &#123;</span><br><span class="line">    <span class="comment">// const ctx = this.createContext(req, res);</span></span><br><span class="line">    <span class="keyword">return</span> <span class="variable language_">this</span>.<span class="title function_">handleRequest</span>(ctx, fn);</span><br><span class="line">  &#125;;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> handleRequest;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>注意到<code>compose(this.middleware)</code>，它将中间件数组组合起来，然后返回一个执行函数<code>fn</code>，当调用执行函数时，如<code>fn(ctx)</code>时，<code>ctx</code>就会以洋葱模型被各个中间件所处理。<code>this.handleRequest</code>干的就是这么一件事，可以看源码:</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="title function_">handleRequest</span>(<span class="params">ctx, fnMiddleware</span>) &#123;</span><br><span class="line">  <span class="comment">// const res = ctx.res;</span></span><br><span class="line">  <span class="comment">// res.statusCode = 404;</span></span><br><span class="line">  <span class="comment">// const onerror = err =&gt; ctx.onerror(err);</span></span><br><span class="line">  <span class="comment">// const handleResponse = () =&gt; respond(ctx);</span></span><br><span class="line">  <span class="comment">// onFinished(res, onerror);</span></span><br><span class="line">  <span class="keyword">return</span> <span class="title function_">fnMiddleware</span>(ctx).<span class="title function_">then</span>(handleResponse).<span class="title function_">catch</span>(onerror);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里我们重点来看一下<code>compose</code>函数，它是实现洋葱模型的核心函数。</p>
+<h3 id="compose函数"><a class="header-anchor" href="#compose函数">¶</a>compose函数</h3>
+<p><code>compose</code>函数并不在<code>koa</code>包里，而是在<code>koa-compose</code>包中，是一个非常短小精悍的函数。源码地址在<a target="_blank" rel="noopener" href="https://github.com/koajs/compose">这里</a>。我们只保留函数的核心部分如下：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="variable language_">module</span>.<span class="property">exports</span> = compose</span><br><span class="line"></span><br><span class="line"><span class="keyword">function</span> <span class="title function_">compose</span> (middleware) &#123;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> <span class="keyword">function</span> (<span class="params">context, next</span>) &#123;</span><br><span class="line">    <span class="comment">// last called middleware #</span></span><br><span class="line">    <span class="keyword">let</span> index = -<span class="number">1</span></span><br><span class="line">    <span class="keyword">return</span> <span class="title function_">dispatch</span>(<span class="number">0</span>)</span><br><span class="line">    <span class="keyword">function</span> <span class="title function_">dispatch</span> (i) &#123;</span><br><span class="line">      <span class="keyword">if</span> (i &lt;= index) <span class="keyword">return</span> <span class="title class_">Promise</span>.<span class="title function_">reject</span>(<span class="keyword">new</span> <span class="title class_">Error</span>(<span class="string">&#x27;next() called multiple times&#x27;</span>))</span><br><span class="line">      index = i</span><br><span class="line">      <span class="keyword">let</span> fn = middleware[i]</span><br><span class="line">      <span class="keyword">if</span> (i === middleware.<span class="property">length</span>) fn = next</span><br><span class="line">      <span class="keyword">if</span> (!fn) <span class="keyword">return</span> <span class="title class_">Promise</span>.<span class="title function_">resolve</span>()</span><br><span class="line">      <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Promise</span>.<span class="title function_">resolve</span>(<span class="title function_">fn</span>(context, dispatch.<span class="title function_">bind</span>(<span class="literal">null</span>, i + <span class="number">1</span>)));</span><br><span class="line">      &#125; <span class="keyword">catch</span> (err) &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="title class_">Promise</span>.<span class="title function_">reject</span>(err)</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上面可以看到我们的中间件是如何调用的，比如上面第一个中间件其实是以<code>middleware_1(context, dispatch(1))</code>的形式调用的。函数中使用到了<code>Promise</code>来保证各个中间件按照洋葱模型执行。具体原理可以自行推导一下。</p>
+<h2 id="一种错误的普通中间件写法"><a class="header-anchor" href="#一种错误的普通中间件写法">¶</a>一种错误的普通中间件写法</h2>
+<p>下面是一种很流行的<strong>错误的</strong>普通中间件写法：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="title function_">one</span> = (<span class="params">ctx, next</span>) =&gt; &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;&gt;&gt; one&#x27;</span>);</span><br><span class="line">  <span class="title function_">next</span>();</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;&lt;&lt; one&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="title function_">two</span> = (<span class="params">ctx, next</span>) =&gt; &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;&gt;&gt; two&#x27;</span>);</span><br><span class="line">  <span class="title function_">next</span>(); </span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;&lt;&lt; two&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="title function_">three</span> = (<span class="params">ctx, next</span>) =&gt; &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;&gt;&gt; three&#x27;</span>);</span><br><span class="line">  <span class="title function_">next</span>();</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;&lt;&lt; three&#x27;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">app.<span class="title function_">use</span>(one);</span><br><span class="line">app.<span class="title function_">use</span>(two);</span><br><span class="line">app.<span class="title function_">use</span>(three);</span><br></pre></td></tr></table></figure>
+<p>代码出自阮一峰老师的<a target="_blank" rel="noopener" href="http://www.ruanyifeng.com/blog/2017/08/koa.html">Koa 框架教程</a>。上面的代码是说明中间件栈（和洋葱模型差不多）这个概念。但是，代码成立的条件是<strong>所有中间件都是同步的</strong>。当其中有任意一个中间件是<code>async</code>的时候，代码就可能不是按照洋葱模型执行了。阮一峰老师提到**如果有异步操作（比如读取数据库），中间件就必须写成 async 函数。**可能就是因为这一原因。</p>
+<p>下面是一个例子，在响应请求的过程中，我们需要记录响应请求所需要的时间，然后对用户传过来的密码进行哈希之后保存。对密码加盐哈希是一个非常耗时的操作，一般使用异步，这里为了模拟耗时，使用<code>setTimeout</code>延时1s。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="title class_">Koa</span> = <span class="built_in">require</span>(<span class="string">&#x27;koa&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="title function_">logger</span> = (<span class="params">ctx, next</span>) =&gt; &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;logger starts&#x27;</span>)</span><br><span class="line">  <span class="keyword">const</span> entryTime = <span class="keyword">new</span> <span class="title class_">Date</span>()</span><br><span class="line">  <span class="title function_">next</span>()</span><br><span class="line">  <span class="keyword">const</span> msUsed = <span class="keyword">new</span> <span class="title class_">Date</span>() - entryTime</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">`response takes <span class="subst">$&#123;msUsed&#125;</span>ms.`</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> <span class="title function_">hashPassword</span> = <span class="keyword">async</span> (<span class="params">ctx, next</span>) =&gt; &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Hashing user password&#x27;</span>)</span><br><span class="line">  <span class="keyword">await</span> <span class="keyword">new</span> <span class="title class_">Promise</span>(<span class="function"><span class="params">resolve</span> =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">setTimeout</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">      <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;password has been hashed&#x27;</span>)</span><br><span class="line">      <span class="title function_">resolve</span>()</span><br><span class="line">    &#125;, <span class="number">1000</span>)</span><br><span class="line">  &#125;)</span><br><span class="line">  ctx.<span class="property">body</span> = <span class="string">&quot;password secure&quot;</span></span><br><span class="line">  <span class="keyword">await</span> <span class="title function_">next</span>()</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Hashing password after next&#x27;</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">const</span> app = <span class="keyword">new</span> <span class="title class_">Koa</span>()</span><br><span class="line">app.<span class="title function_">use</span>(logger)</span><br><span class="line">app.<span class="title function_">use</span>(hashPassword)</span><br><span class="line"></span><br><span class="line">app.<span class="title function_">listen</span>(<span class="number">3000</span>)</span><br></pre></td></tr></table></figure>
+<p>当在浏览器里请求<code>localhost:3000</code>时，console输出如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">logger starts</span><br><span class="line">Hashing user password</span><br><span class="line">response takes 1ms.</span><br><span class="line">password has been hashed</span><br><span class="line">Hashing password after next</span><br></pre></td></tr></table></figure>
+<p>可以看到<code>logger</code>的<code>next</code>之下的部分先于<code>hashPassword</code>的<code>next</code>之下的部分执行，这破坏了洋葱模型。</p>
+<h3 id="这种写法问题出现在哪？"><a class="header-anchor" href="#这种写法问题出现在哪？">¶</a>这种写法问题出现在哪？</h3>
+<p>注意到，<code>next()</code>返回的是一个<code>Promise</code>，在上面的写法中没有对这个<code>Promise</code>做任何处理，直觉告诉我们，这里极有可能会出现异步调用的顺序问题。事实上也是如此，我们来一步一步的分析问题产生的原因。</p>
+<p>首先，<code>logger</code>函数被调用，传入的<code>next</code>参数是<code>dispatch(1)</code>。当<code>logger</code>执行<code>next()</code>，实际上<code>dispatch(1)</code>被执行。注意到<code>dispatch(i)</code>的返回值：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> <span class="title class_">Promise</span>.<span class="title function_">resolve</span>(<span class="title function_">fn</span>(context, dispatch.<span class="title function_">bind</span>(<span class="literal">null</span>, i + <span class="number">1</span>)));</span><br></pre></td></tr></table></figure>
+<p>这个<code>Promise.resolve</code>是什么东西呢？</p>
+<blockquote>
+<p>Promise.resolve(value)方法返回一个以给定值解析后的Promise 对象。但如果这个值是个thenable（即带有then方法），返回的promise会“跟随”这个thenable的对象，采用它的最终状态（指resolved/rejected/pending/settled）；如果传入的value本身就是promise对象，则该对象作为Promise.resolve方法的返回值返回；否则以该值为成功状态返回promise对象。</p>
+</blockquote>
+<p>很不巧，接下来的<code>fn</code>，即<code>hashPassword</code>是一个<code>async</code>函数，当运行<code>async</code>函数时，遇见<code>await</code>，函数会暂停执行并立即返回一个状态为<code>pending</code>的<code>Promise</code>。也就是说，<code>hashPassword</code>在第一个<code>await</code>的时候就返回了一个<code>pending</code>的<code>Promise</code>。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> <span class="title function_">hashPassword</span> = <span class="keyword">async</span> (<span class="params">ctx, next</span>) =&gt; &#123;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Hashing user password&#x27;</span>)</span><br><span class="line">  &gt;&gt; <span class="keyword">await</span> <span class="keyword">new</span> <span class="title class_">Promise</span>(<span class="function">(<span class="params">resolve</span>) =&gt;</span> &#123;</span><br><span class="line">    <span class="built_in">setTimeout</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">      <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;password has been hashed&#x27;</span>)</span><br><span class="line">      <span class="title function_">resolve</span>()</span><br><span class="line">    &#125;, <span class="number">1000</span>)</span><br><span class="line">  &#125;)</span><br><span class="line">  ctx.<span class="property">body</span> = <span class="string">&quot;password secure&quot;</span></span><br><span class="line">  <span class="keyword">await</span> <span class="title function_">next</span>()</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">&#x27;Hashing password after next&#x27;</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>然后问题就大了，<code>Promise.resolve(fn(context, dispatch.bind(null, i + 1)))</code>一看到<code>fn</code>返回了一个<code>Promise</code>，接着就把这个<code>Promise</code>再返回给上层。此时<code>dispatch(1)</code>结束。<code>logger</code>看到<code>next()</code>返回，然后兴高采烈地执行接下来的语句。此时<code>hashPassword</code>仍然在紧张地哈希用户的密码，甚至还没有调用<code>next()</code>函数。洋葱模型就此打乱。</p>
+<h3 id="那么正确的普通中间件的写法是？"><a class="header-anchor" href="#那么正确的普通中间件的写法是？">¶</a>那么正确的普通中间件的写法是？</h3>
+<p>既然官方支持普通中间件，那么正确的写法是什么呢？根据<a target="_blank" rel="noopener" href="https://github.com/koajs/koa#middleware">文档</a>一个正确的普通中间件的写法应该是：</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Middleware normally takes two parameters (ctx, next), ctx is the context for one request,</span></span><br><span class="line"><span class="comment">// next is a function that is invoked to execute the downstream middleware. It returns a Promise with a then function for running code after completion.</span></span><br><span class="line"></span><br><span class="line">app.<span class="title function_">use</span>(<span class="function">(<span class="params">ctx, next</span>) =&gt;</span> &#123;</span><br><span class="line">  <span class="keyword">const</span> start = <span class="title class_">Date</span>.<span class="title function_">now</span>();</span><br><span class="line">  <span class="keyword">return</span> <span class="title function_">next</span>().<span class="title function_">then</span>(<span class="function">() =&gt;</span> &#123;</span><br><span class="line">    <span class="keyword">const</span> ms = <span class="title class_">Date</span>.<span class="title function_">now</span>() - start;</span><br><span class="line">    <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">`<span class="subst">$&#123;ctx.method&#125;</span> <span class="subst">$&#123;ctx.url&#125;</span> - <span class="subst">$&#123;ms&#125;</span>ms`</span>);</span><br><span class="line">  &#125;);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>可以看到正确处理<code>next()</code>返回的<code>Promise</code>才能够保证洋葱模型的正确性。。。</p>
+<p>既然要处理<code>Promise</code>的话…为什么不直接使用<code>async/await</code>呢？</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">app.<span class="title function_">use</span>(<span class="keyword">async</span> (ctx, next) =&gt; &#123;</span><br><span class="line">  <span class="keyword">const</span> start = <span class="title class_">Date</span>.<span class="title function_">now</span>();</span><br><span class="line">  <span class="keyword">await</span> <span class="title function_">next</span>();</span><br><span class="line">  <span class="keyword">const</span> ms = <span class="title class_">Date</span>.<span class="title function_">now</span>() - start;</span><br><span class="line">  <span class="variable language_">console</span>.<span class="title function_">log</span>(<span class="string">`<span class="subst">$&#123;ctx.method&#125;</span> <span class="subst">$&#123;ctx.url&#125;</span> - <span class="subst">$&#123;ms&#125;</span>ms`</span>);</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<p>上面的代码明显要比普通中间件的写法要好看一点。</p>
+<h2 id="总结"><a class="header-anchor" href="#总结">¶</a>总结</h2>
+<p>文章可能标题党了一点，Koa里面的中间件非得是<code>async</code>函数吗？当然不是。但是普通中间件的写法，第一可能和你想象中的不一样，第二还要略懂中间件实现的原理才能够正确实现普通中间件。如果坚信自己会用普通中间件，just do it!</p>
+<h2 id="参考资料"><a class="header-anchor" href="#参考资料">¶</a>参考资料</h2>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Promise/resolve">Promise.resolve() - MDN</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Qingyu Deng
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ayase.moe/2018/11/26/why-not-use-common-middleware-in-koa2/" title="Koa2中为什么不要使用普通中间件">https://ayase.moe/2018/11/26/why-not-use-common-middleware-in-koa2/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Koa/" rel="tag"># Koa</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/11/24/vue-provide-and-inject/" rel="prev" title="Vue的Provide与Inject机制">
+                  <i class="fa fa-chevron-left"></i> Vue的Provide与Inject机制
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/11/27/concerns-about-development-security-event-stream-hijacking/" rel="next" title="重新审视Web开发安全：event-stream注入恶意代码">
+                  重新审视Web开发安全：event-stream注入恶意代码 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">127k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:55</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Ayase-252/Ayase-252.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

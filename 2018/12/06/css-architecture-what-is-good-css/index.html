@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ayase.moe","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.14.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":true,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="CSS应该怎么写？当被问到这一个问题的时候，我懵了。之前在个人项目中写CSS都是随心而写，最后显示效果也还可以，所以一直没注意到这个问题。回想到之前在修改样式的时候遇见了修改文章的样式却造成了全局布局的更改，原因是文章的容器类与一个全局布局相关的容器类意外重名了。在小型项目中尚且如此，如果在大型项目中随心而写，后果那就可想而知了。emmmmmm。CSS该怎么写，确实是一个值得思考的问题。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CSS架构（I）—— CSS该怎么写">
+<meta property="og:url" content="https://ayase.moe/2018/12/06/css-architecture-what-is-good-css/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="CSS应该怎么写？当被问到这一个问题的时候，我懵了。之前在个人项目中写CSS都是随心而写，最后显示效果也还可以，所以一直没注意到这个问题。回想到之前在修改样式的时候遇见了修改文章的样式却造成了全局布局的更改，原因是文章的容器类与一个全局布局相关的容器类意外重名了。在小型项目中尚且如此，如果在大型项目中随心而写，后果那就可想而知了。emmmmmm。CSS该怎么写，确实是一个值得思考的问题。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2018-12-06T13:34:44.000Z">
+<meta property="article:modified_time" content="2023-02-12T16:58:41.256Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="CSS">
+<meta property="article:tag" content="CSS架构">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="https://ayase.moe/2018/12/06/css-architecture-what-is-good-css/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ayase.moe/2018/12/06/css-architecture-what-is-good-css/","path":"2018/12/06/css-architecture-what-is-good-css/","title":"CSS架构（I）—— CSS该怎么写"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>CSS架构（I）—— CSS该怎么写 | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-85059083-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Ayase-252's wonderland</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%A5%BD%E7%9A%84css%E5%BA%94%E8%AF%A5%E6%98%AF%E6%80%8E%E4%B9%88%E6%A0%B7%E7%9A%84"><span class="nav-number">1.</span> <span class="nav-text">好的CSS应该是怎么样的</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%AF%E9%A2%84%E8%A7%81%E7%9A%84"><span class="nav-number">1.1.</span> <span class="nav-text">可预见的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%AF%E5%A4%8D%E7%94%A8%E7%9A%84"><span class="nav-number">1.2.</span> <span class="nav-text">可复用的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%AF%E7%BB%B4%E6%8A%A4%E7%9A%84"><span class="nav-number">1.3.</span> <span class="nav-text">可维护的</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%AF%E6%89%A9%E5%B1%95%E7%9A%84"><span class="nav-number">1.4.</span> <span class="nav-text">可扩展的</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B8%B8%E8%A7%81%E7%9A%84bad-practices"><span class="nav-number">2.</span> <span class="nav-text">常见的Bad Practices</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A0%B9%E6%8D%AE%E7%88%B6%E5%85%83%E7%B4%A0%E4%BF%AE%E6%94%B9%E7%BB%84%E4%BB%B6"><span class="nav-number">2.1.</span> <span class="nav-text">根据父元素修改组件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%87%E4%BA%8E%E5%A4%8D%E6%9D%82%E7%9A%84%E9%80%89%E6%8B%A9%E5%99%A8"><span class="nav-number">2.2.</span> <span class="nav-text">过于复杂的选择器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%BF%87%E4%BA%8E%E4%B8%80%E8%88%AC%E5%8C%96%E7%9A%84%E7%B1%BB%E5%90%8D"><span class="nav-number">2.3.</span> <span class="nav-text">过于一般化的类名</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8D%95%E6%9D%A1%E8%A7%84%E5%88%99%E4%B8%AD%E5%81%9A%E4%BA%86%E5%A4%AA%E5%A4%9A%E4%BA%8B%E6%83%85"><span class="nav-number">2.4.</span> <span class="nav-text">单条规则中做了太多事情</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:i@ayase-lab.com" title="E-Mail → mailto:i@ayase-lab.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener me" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2018/12/06/css-architecture-what-is-good-css/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="CSS架构（I）—— CSS该怎么写 | Ayase-252's wonderland">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          CSS架构（I）—— CSS该怎么写
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-12-06 21:34:44" itemprop="dateCreated datePublished" datetime="2018-12-06T21:34:44+08:00">2018-12-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-02-13 00:58:41" itemprop="dateModified" datetime="2023-02-13T00:58:41+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Programming/" itemprop="url" rel="index"><span itemprop="name">Programming</span></a>
+        </span>
+          ，
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Programming/Front-end/" itemprop="url" rel="index"><span itemprop="name">Front-end</span></a>
+        </span>
+          ，
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Programming/Front-end/CSS/" itemprop="url" rel="index"><span itemprop="name">CSS</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>2.5k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>2 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>CSS应该怎么写？当被问到这一个问题的时候，我懵了。之前在个人项目中写CSS都是随心而写，最后显示效果也还可以，所以一直没注意到这个问题。回想到之前在修改样式的时候遇见了修改文章的样式却造成了全局布局的更改，原因是文章的容器类与一个全局布局相关的容器类意外重名了。在小型项目中尚且如此，如果在大型项目中随心而写，后果那就可想而知了。emmmmmm。CSS该怎么写，确实是一个值得思考的问题。</p>
+<span id="more"></span>
+<h2 id="好的css应该是怎么样的"><a class="header-anchor" href="#好的css应该是怎么样的">¶</a>好的CSS应该是怎么样的</h2>
+<p>在讨论怎么写CSS好之前，首先要解决的问题是——好的CSS是什么？好看？好用？或者是…</p>
+<p>在谷歌工程师Philip Walton的这篇
+<a target="_blank" rel="noopener" href="https://philipwalton.com/articles/css-architecture/">CSS Architecture</a>中
+提到了好的CSS应该是可预见的、可复用的、可维护的与可扩展的。</p>
+<h3 id="可预见的"><a class="header-anchor" href="#可预见的">¶</a>可预见的</h3>
+<p>设计良好的CSS规则可以让开发者可以预见应用规则之后元素的样式。比如一个<code>.big-red-btn</code>规定了一个大红按钮。那么我们在某个元素中应用<code>class=&quot;big-red-btn&quot;</code>时，这个元素就应该是一个大红按钮。</p>
+<h3 id="可复用的"><a class="header-anchor" href="#可复用的">¶</a>可复用的</h3>
+<p>CSS规则应该足够抽象与解耦。这样，同一条CSS规则就可以在整个工程的不同地方使用。可复用性最
+直观的好处是CSS代码的体积的减少。而且在进一步开发中或项目进行重大重构时，如果项目使用了可重用的规则，我们更改代码的工作量就可以大大减少。</p>
+<h3 id="可维护的"><a class="header-anchor" href="#可维护的">¶</a>可维护的</h3>
+<p>我们希望开发新功能时不需要去重构原来的代码。增加一个组件不会影响另外一个相关的组件。</p>
+<h3 id="可扩展的"><a class="header-anchor" href="#可扩展的">¶</a>可扩展的</h3>
+<p>当新的开发者接手项目时，不需要太难的学习曲线就可以上手开发。如果在为新的组件编写CSS规则时需要了解过去全部的CSS规则，这样的CSS代码是不可扩展的。</p>
+<h2 id="常见的bad-practices"><a class="header-anchor" href="#常见的bad-practices">¶</a>常见的Bad Practices</h2>
+<p>文章列出了一些常见的Bad practices，例如：根据父元素改变组件、过于复杂的选择器、过于一般的类名以及在单条规则里做太多事情。这些Bad practice我是全中了，ORZ。</p>
+<h3 id="根据父元素修改组件"><a class="header-anchor" href="#根据父元素修改组件">¶</a>根据父元素修改组件</h3>
+<p>在网站中可能有些在不同区域中外观有细微差别的组件，比如一个小物件在侧边栏中以及主页中表现不一样。我们很容易写出像下面的CSS规则：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-class">.widget</span> &#123;</span><br><span class="line">  <span class="attribute">background</span>: yellow;</span><br><span class="line">  <span class="attribute">border</span>: <span class="number">1px</span> solid black;</span><br><span class="line">  <span class="attribute">color</span>: black;</span><br><span class="line">  <span class="attribute">width</span>: <span class="number">50%</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="selector-id">#sidebar</span> <span class="selector-class">.widget</span> &#123;</span><br><span class="line">  <span class="attribute">width</span>: <span class="number">200px</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="selector-tag">body</span><span class="selector-class">.homepage</span> <span class="selector-class">.widget</span> &#123;</span><br><span class="line">  <span class="attribute">background</span>: white;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个看起来无害的<code>.widget</code>可以数出它的三宗罪。第一、这个<code>.widget</code>不符合可预见性的要求。在同样的HTML标签<code>&lt;div class=&quot;widget&quot;&gt;&lt;/div&gt;</code>放在不同的地方它的表现就不一样。第二、<code>.widget</code>规则不好复用，当我就想在侧边栏上用普通外观的<code>.widget</code>时该怎么办呢？只能搞一个新的copy-and-paste的规则。第三、<code>.widget</code>规则不好维护，当<code>.widget</code>被重新设计的时候，我可能需要到几个不同的地方把样式找出来修改。</p>
+<h3 id="过于复杂的选择器"><a class="header-anchor" href="#过于复杂的选择器">¶</a>过于复杂的选择器</h3>
+<p>在给列表，特别是嵌套列表写样式的时候，很容易写出下面一串CSS规则:</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-id">#main-nav</span> <span class="selector-tag">ul</span> <span class="selector-tag">li</span> <span class="selector-tag">ul</span> <span class="selector-tag">li</span> <span class="selector-tag">div</span> &#123; &#125;</span><br></pre></td></tr></table></figure>
+<p>上面的规则问题在哪里呢？假如导航栏里面的HTML结构一辈子不变，这样的写法还可以商榷。一旦将来改变，上面的规则将会失效。这个问题总结起来就是<strong>过于复杂的选择器会造成过深的耦合</strong>。太深的耦合在程序世界里不是什么好事情。另外，这样的规则也无法复用，一个页面只能有一个<code>#main-nav</code>，后面的元素如果不在<code>#main-nav</code>里面也无法匹配到规则。</p>
+<h3 id="过于一般化的类名"><a class="header-anchor" href="#过于一般化的类名">¶</a>过于一般化的类名</h3>
+<p>在写可复用组件的时候，很容易给组件取一些很一般的名字像<code>title</code>，<code>content</code>。在大型项目中，可能其他人也会给他们的组件取相同的名字。由于CSS没有作用域的概念，这样就容易出现命名冲突。当写出一个规则但是完全不按写的规则来的时候，我们就会很疑惑，然后debug发现自己写的规则被其他人写的同名规则覆盖…WTF!上面的例子也就是说，太一般的类名是没有可预见性的。</p>
+<h3 id="单条规则中做了太多事情"><a class="header-anchor" href="#单条规则中做了太多事情">¶</a>单条规则中做了太多事情</h3>
+<p>有的时候，我们会在一条规则中把所有该指定的东西都指定完——如元素的位置、背景、字体设置等等，像：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="selector-class">.widget</span> &#123;</span><br><span class="line">  <span class="attribute">position</span>: absolute;</span><br><span class="line">  <span class="attribute">top</span>: <span class="number">20px</span>;</span><br><span class="line">  <span class="attribute">left</span>: <span class="number">20px</span>;</span><br><span class="line">  <span class="attribute">background-color</span>: red;</span><br><span class="line">  <span class="attribute">font-size</span>: <span class="number">1.5em</span>;</span><br><span class="line">  <span class="attribute">text-transform</span>: uppercase;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>.widget</code>一条规则设置了组件的位置、背景、字体。这一条看起来也是人畜无害的规则。
+但是仔细一想的话，这条规则似乎无法复用。
+如果我想把<code>.widget</code>用在绝对定位元素的右下角怎么办？当我们把规则写的越细，
+那么这条规则适用的范围就越小。用在CSS世界中就是，<strong>规则的具体程度与可复用性是矛盾的。</strong></p>
+<p>从上面这些bad practice反面去理解，我们可以摸到一些如何写CSS的门路：</p>
+<ol>
+<li>谨慎使用后代选择器：后代选择器似乎像是万恶之源一样，后代选择器会在规则之间创造一定的耦合，影响规则的可预见性、可重用性、可维护性等等。</li>
+<li>合理拆分规则：太具体的规则不好复用。但是反之规则太笼统的话，就会需要很多规则才能做一件事情。所以，怎么拆分规则是一个trade-off问题。</li>
+<li>类命名空间机制：CSS是没有命名空间的概念的，要减少命名冲突的可能性，势必要采取严格的命名规范隔离开不同的规则。</li>
+</ol>
+<p>当然，上面的想法还是过于粗略。社区在如何写CSS方面有了一些探索，其中最有名有
+<a target="_blank" rel="noopener" href="https://github.com/stubbornella/oocss/wiki">OOCSS</a>（Object Oriented CSS）、
+<a target="_blank" rel="noopener" href="https://smacss.com/">SMACSS</a>（Scalable and Modular Architecture for CSS）与<a target="_blank" rel="noopener" href="http://getbem.com/">BEM</a>（Block, Element, Modifier），如果有兴趣的话可以浏览一下这些规范。</p>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Qingyu Deng
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ayase.moe/2018/12/06/css-architecture-what-is-good-css/" title="CSS架构（I）—— CSS该怎么写">https://ayase.moe/2018/12/06/css-architecture-what-is-good-css/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/CSS/" rel="tag"># CSS</a>
+              <a href="/tags/CSS%E6%9E%B6%E6%9E%84/" rel="tag"># CSS架构</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/12/02/everyone-creator/" rel="prev" title="Everyone, Creator">
+                  <i class="fa fa-chevron-left"></i> Everyone, Creator
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/12/09/unit-test-with-jest/" rel="next" title="使用Jest进行单元测试">
+                  使用Jest进行单元测试 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">127k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:55</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">false</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Ayase-252/Ayase-252.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 6.3.0">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/apple-touch-icon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css" integrity="sha256-Z1K5uhUaJXA7Ll0XrZ/0JhX4lAtZFpT6jkKrEDT0drU=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css" integrity="sha256-PR7ttpcvz8qrF57fur/yAx1qXMFJeJFiA6pSzWi0OIE=" crossorigin="anonymous">
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"ayase.moe","root":"/","images":"/images","scheme":"Gemini","darkmode":true,"version":"8.14.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":{"enable":false,"style":null},"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":"utterances","storage":true,"lazyload":false,"nav":null,"activeClass":"utterances"},"stickytabs":false,"motion":{"enable":true,"async":true,"transition":{"menu_item":"fadeInDown","post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="上一篇文章，我们介绍了有关HTTPS的一些密码学的基础，介绍了对称加密、非对称加密算法以及Diffie Hellman密钥交换协议等。这一篇文章，我们会介绍如何建立一个HTTPS连接，更准确的说，如何通过SSL&#x2F;TLS协议建立起安全的连接。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="一文弄懂HTTPS（II）-TLS&#x2F;SSL协议握手">
+<meta property="og:url" content="https://ayase.moe/2018/11/15/https-tls/index.html">
+<meta property="og:site_name" content="Ayase-252&#39;s wonderland">
+<meta property="og:description" content="上一篇文章，我们介绍了有关HTTPS的一些密码学的基础，介绍了对称加密、非对称加密算法以及Diffie Hellman密钥交换协议等。这一篇文章，我们会介绍如何建立一个HTTPS连接，更准确的说，如何通过SSL&#x2F;TLS协议建立起安全的连接。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://ayase.moe/2018/11/15/https-tls/certificate-1.png">
+<meta property="og:image" content="https://ayase.moe/2018/11/15/https-tls/certificate-2.png">
+<meta property="og:image" content="https://ayase.moe/2018/11/15/https-tls/certificate-3.png">
+<meta property="article:published_time" content="2018-11-15T15:31:56.000Z">
+<meta property="article:modified_time" content="2023-02-12T16:58:41.264Z">
+<meta property="article:author" content="Qingyu Deng">
+<meta property="article:tag" content="Computer Network">
+<meta property="article:tag" content="HTTPS">
+<meta property="article:tag" content="Web Security">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ayase.moe/2018/11/15/https-tls/certificate-1.png">
+
+
+<link rel="canonical" href="https://ayase.moe/2018/11/15/https-tls/">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://ayase.moe/2018/11/15/https-tls/","path":"2018/11/15/https-tls/","title":"一文弄懂HTTPS（II）-TLS/SSL协议握手"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>一文弄懂HTTPS（II）-TLS/SSL协议握手 | Ayase-252's wonderland</title>
+  
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-85059083-2"></script>
+  <script class="next-config" data-name="google_analytics" type="application/json">{"tracking_id":"UA-85059083-2","only_pageview":false}</script>
+  <script src="/js/third-party/analytics/google-analytics.js"></script>
+
+
+
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <div class="column">
+      <header class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">Ayase-252's wonderland</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger" aria-label="搜索" role="button">
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li><li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li><li class="menu-item menu-item-sitemap"><a href="/sitemap.xml" rel="section"><i class="fa fa-sitemap fa-fw"></i>站点地图</a></li>
+  </ul>
+</nav>
+
+
+
+
+</header>
+        
+  
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#tls-ssl%E5%8D%8F%E8%AE%AE"><span class="nav-number">1.</span> <span class="nav-text">TLS&#x2F;SSL协议</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#tls%E6%8F%A1%E6%89%8B%E5%8D%8F%E8%AE%AE"><span class="nav-number">2.</span> <span class="nav-text">TLS握手协议</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#part-1-%E5%AF%86%E9%92%A5%E4%BA%A4%E6%8D%A2%E4%B8%8E%E5%AF%86%E9%92%A5%E5%8D%8F%E5%95%86"><span class="nav-number">2.1.</span> <span class="nav-text">Part.1 密钥交换与密钥协商</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#client-hello"><span class="nav-number">2.1.1.</span> <span class="nav-text">Client Hello</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#server-hello"><span class="nav-number">2.2.</span> <span class="nav-text">Server Hello</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#certificate"><span class="nav-number">2.3.</span> <span class="nav-text">Certificate</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#server-key-exchange"><span class="nav-number">2.4.</span> <span class="nav-text">Server Key Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#server-hello-done"><span class="nav-number">2.5.</span> <span class="nav-text">Server Hello Done</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A1%E7%AE%97%E9%A2%84%E4%B8%BB%E5%AF%86%E9%92%A5"><span class="nav-number">2.6.</span> <span class="nav-text">计算预主密钥</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#client-key-exchange"><span class="nav-number">2.7.</span> <span class="nav-text">Client Key Exchange</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AE%A1%E7%AE%97%E4%B8%BB%E5%AF%86%E9%92%A5"><span class="nav-number">2.8.</span> <span class="nav-text">计算主密钥</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8F%8C%E6%96%B9%E8%A6%81%E4%BD%BF%E7%94%A8%E4%B8%8D%E5%90%8C%E7%9A%84%E5%86%85%E5%AE%B9%E5%8A%A0%E5%AF%86%E5%AF%86%E9%92%A5%EF%BC%9F"><span class="nav-number">2.8.1.</span> <span class="nav-text">为什么双方要使用不同的内容加密密钥？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#mac%E5%AF%86%E9%92%A5%E5%8F%88%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">2.8.2.</span> <span class="nav-text">MAC密钥又是什么？</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#part-2-%E9%80%9A%E4%BF%A1%E6%B5%8B%E8%AF%95"><span class="nav-number">3.</span> <span class="nav-text">Part.2 通信测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#tls%E4%BC%9A%E8%AF%9D%E5%A4%8D%E7%94%A8"><span class="nav-number">4.</span> <span class="nav-text">TLS会话复用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AF%86%E7%A0%81%E5%A5%97%E4%BB%B6"><span class="nav-number">5.</span> <span class="nav-text">密码套件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">6.</span> <span class="nav-text">总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">7.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Qingyu Deng"
+      src="/uploads/avatar.webp">
+  <p class="site-author-name" itemprop="name">Qingyu Deng</p>
+  <div class="site-description" itemprop="description">I came to see you. It was not easy because you were so far away.</div>
+</div>
+<div class="site-state-wrap animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">46</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">20</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">66</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/Ayase-252" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;Ayase-252" rel="noopener me" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:i@ayase-lab.com" title="E-Mail → mailto:i@ayase-lab.com" rel="noopener me" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="https://twitter.com/ayase_niconi" title="Twitter → https:&#x2F;&#x2F;twitter.com&#x2F;ayase_niconi" rel="noopener me" target="_blank"><i class="fab fa-twitter fa-fw"></i>Twitter</a>
+      </span>
+  </div>
+
+        </div>
+      </div>
+    </div>
+
+    
+  </aside>
+
+
+    </div>
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://ayase.moe/2018/11/15/https-tls/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/uploads/avatar.webp">
+      <meta itemprop="name" content="Qingyu Deng">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Ayase-252's wonderland">
+      <meta itemprop="description" content="I came to see you. It was not easy because you were so far away.">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="一文弄懂HTTPS（II）-TLS/SSL协议握手 | Ayase-252's wonderland">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          一文弄懂HTTPS（II）-TLS/SSL协议握手
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2018-11-15 23:31:56" itemprop="dateCreated datePublished" datetime="2018-11-15T23:31:56+08:00">2018-11-15</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar-check"></i>
+      </span>
+      <span class="post-meta-item-text">更新于</span>
+      <time title="修改时间：2023-02-13 00:58:41" itemprop="dateModified" datetime="2023-02-13T00:58:41+08:00">2023-02-13</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/Technology/" itemprop="url" rel="index"><span itemprop="name">Technology</span></a>
+        </span>
+    </span>
+
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>5.7k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>5 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <a href="/2018/11/15/https-cryto-basic/" title="一文弄懂HTTPS（I）：密码学基础">上一篇文章</a>，我们介绍了有关HTTPS的一些密码学的基础，介绍了对称加密、非对称加密算法以及Diffie Hellman密钥交换协议等。这一篇文章，我们会介绍如何建立一个HTTPS连接，更准确的说，如何通过SSL/TLS协议建立起安全的连接。
+<span id="more"></span>
+<h2 id="tls-ssl协议"><a class="header-anchor" href="#tls-ssl协议">¶</a>TLS/SSL协议</h2>
+<p>回到HTTPS为什么能够安全地传输数据这一问题。我们曾经回答过，数据在传输过程中被加密了。但是其实，HTTPS还是那个HTTP协议，只不过在传输层与HTTP之间加上了一层安全协议，TLS/SSL。HTTPS实质上是下面的架构。</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">HTTP</span><br><span class="line">----</span><br><span class="line">SSL/TLS</span><br><span class="line">----</span><br><span class="line">TCP</span><br><span class="line">----</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>那么，TLS/SSL又是什么东西呢？TLS（Transport Layer Security，传输层安全性协议）以及其前身SSL（Secure Sockets Layer，安全套接层）是一种安全协议，为其上层协议提供在不安全信道上的安全传输服务。TLS与其上层协议没有耦合，因此其上层协议不仅仅可以是HTTP，还可以是邮箱服务等。</p>
+<p>TLS发展到现在已经到了TLS1.3版本，有兴趣的话可以查阅相关的历史沿革。</p>
+<h2 id="tls握手协议"><a class="header-anchor" href="#tls握手协议">¶</a>TLS握手协议</h2>
+<p>我们常说的HTTPS握手的过程实质上是TLS握手协议执行的过程。TLS采用C/S模型，即客户端服务器模型，下面我们也会使用客户端、服务器这样的术语。</p>
+<p>注意TLS协议握手与密钥交换协议的目的是一致的，都是为了客户端与服务器之间能够<strong>共享一个密钥</strong>。</p>
+<p>下面我们来简介一下过程：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">Client                          Server</span><br><span class="line">  | ----&gt; (1) Client Hello ----&gt;   |</span><br><span class="line">  | &lt;---- (2) Server Hello &lt;----   |</span><br><span class="line">  | &lt;---- (3) Certificate  &lt;----   |</span><br><span class="line">  | &lt;---- (4) Server Key Exchange  |</span><br><span class="line">  | ----- (5) Server Hello Done    |</span><br><span class="line">  | ----&gt; (6) Client Key Exchange  |</span><br><span class="line">  ---------------------------------- Part. 1</span><br><span class="line">  | ----&gt; (7) Change Cipher Spec   |</span><br><span class="line">  | ----&gt; (8) Finish       ----&gt;   |</span><br><span class="line">  | &lt;---- (9) Change Cipher Spec   |</span><br><span class="line">  | &lt;---- (10) Finish      -----   |</span><br><span class="line">  ---------------------------------- Part. 2</span><br><span class="line">        Shakehand Finish</span><br></pre></td></tr></table></figure>
+<p>握手可以分为两个部分，第一部分是客户端和服务器之间协商建立其安全通信的过程，第二部分是客户端与服务器之间就协商建立好安全通信进行测试的过程。这里我们先讲第一个部分。</p>
+<h3 id="part-1-密钥交换与密钥协商"><a class="header-anchor" href="#part-1-密钥交换与密钥协商">¶</a>Part.1 密钥交换与密钥协商</h3>
+<p>如前面密码学基础讲过，要实现通信双方的“悄悄话”，使用对称加密的方式，双方需要就密钥达成统一。那么，在现实中如何做到呢？这就要用到上面Part.1的握手过程了。接下来的内容，初次接触TLS的同学可能会很迷惑，因为会有很多新名词出现。不过不用担心，我会在结尾总结为什么会有这些名词的出现。好，那我们开始HTTPS探险的第一步！</p>
+<h4 id="client-hello"><a class="header-anchor" href="#client-hello">¶</a>Client Hello</h4>
+<p>如HTTP一样，TLS握手的第一步也是由客户端发起的，这一步向服务器表明想要建立安全连接的意愿，并且向服务器提供一些必要的信息，如接下来连接可以使用的密码套件（这里的密码指Cipher，是指一种用于<strong>加密</strong>及<strong>解密</strong>的算法，而不是我们通常意义上说的Password），以及用于生成主密钥的<strong>客户端随机数1</strong>。这一步报文携带的信息有：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>用处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Version</code></td>
+<td>使用的TLS的版本号</td>
+</tr>
+<tr>
+<td><code>Random</code></td>
+<td><strong>客户端随机数1</strong>，用于生成主密钥</td>
+</tr>
+<tr>
+<td><code>SessionId</code></td>
+<td>会话ID，用处在后面会讲</td>
+</tr>
+<tr>
+<td><code>Cipher Suite</code></td>
+<td>客户端可以使用的密码套件，按优先级排序。一个密码套件包含<strong>密钥交换协议</strong>，<strong>对称加密算法</strong>，<strong>消息认证码（MAC）算法</strong>，<strong>伪随机函数</strong>。为什么是这四种后面会提到</td>
+</tr>
+<tr>
+<td><code>Compression Method</code></td>
+<td>数据压缩方法（由于存在安全漏洞，在TLS1.3中被禁用）</td>
+</tr>
+<tr>
+<td><code>Extensions</code></td>
+<td>一些扩展信息</td>
+</tr>
+</tbody>
+</table>
+<p>当服务器收到客户端的Client Hello信息之后，服务器就要忙起来了。为了建立起TLS连接，服务器需要向客户端通知：（1）就TLS版本，密码套件达成一致；（2）交换密钥使用的非对称算法的公钥及证书；（3）密钥交换协议需要的参数。</p>
+<h3 id="server-hello"><a class="header-anchor" href="#server-hello">¶</a>Server Hello</h3>
+<p>Server Hello信息主要表明了服务器在TLS版本，密码套件上的选择。同时服务器会向客户端发送<strong>服务器随机数2</strong>。在这一步，报文携带的信息有：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>用处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Version</code></td>
+<td>使用的TLS的版本号</td>
+</tr>
+<tr>
+<td><code>Random</code></td>
+<td><strong>服务端随机数2</strong>，用于生成主密钥</td>
+</tr>
+<tr>
+<td><code>SessionId</code></td>
+<td>会话ID，用处后面会讲</td>
+</tr>
+<tr>
+<td><code>Cipher Suite</code></td>
+<td>服务器选择的密码套件，接下来的通信将会遵循这一套件</td>
+</tr>
+<tr>
+<td><code>Compression Method</code></td>
+<td>数据压缩方法（存在安全漏洞，在TLS1.3中被禁用）</td>
+</tr>
+<tr>
+<td><code>Extensions</code></td>
+<td>一些扩展信息</td>
+</tr>
+</tbody>
+</table>
+<h3 id="certificate"><a class="header-anchor" href="#certificate">¶</a>Certificate</h3>
+<p>然后，服务器需要做的是把证书传递给客户端。在前一篇文章中，我们讲到了D-H密钥交换中中间人攻击。为了防止中间人攻击，需要保证非对称加密的公钥确实来自通信的一方。因此，Web建立起了PKI（Public Key Infrastructure，公开密钥基础建设）。也许以后我们会详细说这个主题。现在可以先这么想：</p>
+<p>在现实生活中有公证处这一个机构，负责认证提交文件的有效性，认证之后公证处会颁发一份公证书，表明文件是真实有效的。接下来，出于对公证处这一个机构的信任，我们会信任带有公证书的这一份文件的内容。</p>
+<p>假设在网络世界中有公证处这一个机构（其实是有的，数字证书认证机构，Certificate Authority, CA），我们向CA申请认证我们的公私钥对，如果认证通过的话，公证处会向我们颁发一个证书（Certification）。出于对CA的信任，我们认为证书认证过的公钥是正确的。</p>
+<p>其实两者说的是一回事，想想申请公证和申请证书都是需要钱的。。</p>
+<p>以本网站的证书举例（使用了Cloudflare CDN加速），我们来看看证书里包含什么信息（用PC访问的可以直接点地址栏右面的锁标记）：
+<img src="/2018/11/15/https-tls/certificate-1.png" alt="Certification image 1">
+<img src="/2018/11/15/https-tls/certificate-2.png" alt="Certification image 2">
+<img src="/2018/11/15/https-tls/certificate-3.png" alt="Certification image 3"></p>
+<p>这些字段的用处如下表所示：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>用处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>版本</td>
+<td>数字证书符合的版本（<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/X.509">X.509</a>）</td>
+</tr>
+<tr>
+<td>序列号</td>
+<td>证书颁发机构给这份证书的序列号</td>
+</tr>
+<tr>
+<td>签名算法</td>
+<td>对证书的重点内容进行非对称加密加密，生成签名使用的算法，用于验证证书确实由颁发者背书</td>
+</tr>
+<tr>
+<td>签名哈希算法</td>
+<td>对证书内容进行哈希，生成指纹使用的算法，用于验证证书是否完整无误</td>
+</tr>
+<tr>
+<td>颁发者</td>
+<td>证书的颁发机构</td>
+</tr>
+<tr>
+<td>有效期</td>
+<td>证书的有效期</td>
+</tr>
+<tr>
+<td>使用者</td>
+<td>谁可以使用这份证书</td>
+</tr>
+<tr>
+<td>公钥</td>
+<td>这份证书认证的公钥以及非对称加密算法</td>
+</tr>
+<tr>
+<td>公钥参数</td>
+<td>非对称加密算法采用的其他参数</td>
+</tr>
+<tr>
+<td>指纹</td>
+<td>对证书内容按签名哈希算法进行哈希得到的值</td>
+</tr>
+</tbody>
+</table>
+<p>值得注意的是，证书体系中有一条信任链。层级最高的为根CA，它们的证书已经被提前预置到世界上所有的电脑中，它们可以通过签发证书授权中间CA向其他客户颁发证书。如果服务器的证书由中间CA颁发，在这个阶段，服务器需要按照信任链的顺序向客户端传送从服务器证书到离CA最近的一个中间CA的证书。如信任链是<code>CA -&gt; ICA1 -&gt; ICA2 -&gt;...-&gt; ICA n -&gt; Server Cert</code>，那么服务器需要传送<code>Server Cert, ICA n, ..., ICA 2 -&gt; ICA 1</code>。然后浏览器通过预置在电脑上的根CA的证书验证整条信任链是否完好。</p>
+<h3 id="server-key-exchange"><a class="header-anchor" href="#server-key-exchange">¶</a>Server Key Exchange</h3>
+<p>说了很多证书方面的东西，假设证书有效，现在客户端已经知道了如何使用非对称加密向服务器传送数据了。接下来，根据协定好的密钥交换协议，服务器<strong>可能</strong>需要向客户端传送<strong>密钥交换协议</strong>所需要的参数。这一步是<strong>可选</strong>的。以D-H密钥交换协议为例，密钥交换双方需要对$p$, $a$达成一致（不熟悉的可以看<a href="/2018/11/15/https-cryto-basic/" title="一文弄懂HTTPS（I）：密码学基础">这里</a>），在这一步可以将$p$, $q$，以及$a^{k_2} \mod p$一起发送出去。</p>
+<h3 id="server-hello-done"><a class="header-anchor" href="#server-hello-done">¶</a>Server Hello Done</h3>
+<p>这一个报文表示Server Hello整个过程的完成。客户端可以根据收到的信息计算Pre-master secret（预主密钥）。</p>
+<h3 id="计算预主密钥"><a class="header-anchor" href="#计算预主密钥">¶</a>计算预主密钥</h3>
+<p>预主密钥的生成方式与<strong>密钥交换协议</strong>有关，如果采用D-H密钥交换，客户端可以产生随机数$k_1$，然后计算$a^(k_1) \mod p$作为预主密钥，并用证书中的非对称加密方法及其公钥加密。</p>
+<h3 id="client-key-exchange"><a class="header-anchor" href="#client-key-exchange">¶</a>Client Key Exchange</h3>
+<p>将上面加密好的预主密钥通过Client Key Exchange报文发送给服务器。服务器使用其私钥解密，就能够得到预主密钥。</p>
+<p>自此第一部分密钥协商双方交互的部分就告一段落了。接下来，客户端与服务器会使用接收到的信息计算正式通信时<strong>对称加密算法</strong>的密钥（主密钥的计算）。</p>
+<h3 id="计算主密钥"><a class="header-anchor" href="#计算主密钥">¶</a>计算主密钥</h3>
+<p>我们先来统计一下在上面的交换中服务器和客户端就什么值达成了一致：</p>
+<ol>
+<li><code>ClientHello.random</code>：由客户端在<code>Client Hello</code>报文中发送给服务器，公开信息；</li>
+<li><code>ServerHello.random</code>：由服务器在<code>Server Hello</code>报文中发送给客户端，公开信息；</li>
+<li><code>Pre-master secret</code>：预主密钥，非公开信息；</li>
+</ol>
+<p>计算主密钥的方式由RFC 5356规定：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">master_secret = PRF（pre_master_secret，“master secret”，ClientHello.random + ServerHello.random）[0..47];</span><br></pre></td></tr></table></figure>
+<p>其中，<code>PRF</code>是协议约定的<strong>伪随机函数</strong>，其中<code>pre_master_secret</code>是非公开信息，因此中间人无法知道主密钥的存在，但是通信双方是可以产生同一把主密钥的。</p>
+<p>到此，可能会有同学认为我们艰苦的工作就告一段落了。但是事实上没有。我们还会根据主密钥产生四把密钥。分别为：</p>
+<ul>
+<li>客户端写入加密密钥：客户端用来加密数据，服务器用来解密数据。</li>
+<li>服务器写入加密密钥：服务器用来加密数据，客户端用来解密数据。</li>
+<li>客户端写入MAC密钥：客户端用来创建MAC，服务器用来验证MAC。</li>
+<li>服务器写入MAC密钥：服务器用来创建MAC，客户端用来验证MAC。</li>
+</ul>
+<p>WHY？？？？</p>
+<h4 id="为什么双方要使用不同的内容加密密钥？"><a class="header-anchor" href="#为什么双方要使用不同的内容加密密钥？">¶</a>为什么双方要使用不同的内容加密密钥？</h4>
+<p>由于在一些对称加密算法中，使用相同的密钥加密并不安全，这个<a target="_blank" rel="noopener" href="https://crypto.stackexchange.com/questions/2878/separate-read-and-write-keys-in-tls-key-material">回答</a>解释了在使用RC4加密算法时，使用相同密钥加密的情况下，中间人可以通过对双方流量的监听获得明文的例子。</p>
+<h4 id="mac密钥又是什么？"><a class="header-anchor" href="#mac密钥又是什么？">¶</a>MAC密钥又是什么？</h4>
+<p>TLS进行了复杂的加密，但是到目前为止，只保证了<strong>中间人不能够窃听消息</strong>，但是不能保证<strong>中间人不能够篡改消息</strong>。</p>
+<p>MAC（Message Authentication Code，消息认证码）机制便提供了这样一个保证。消息验证码的原理其实和通信时使用的校验和差不多。在数据发送前，一方会将<strong>明文</strong>，使用密码套件的<strong>消息认证码算法</strong>计算好MAC，然后将其包含在加密数据中。另外一方接收到报文先将密文和MAC分开，对密文使用<strong>对称加密算法</strong>解密成明文，再用<strong>消息认证码算法</strong>计算MAC，如果MAC匹配的化就认为报文是完好的。</p>
+<p>自此，我们已经生成好了密码套件中所有算法需要的参数，为了保证万无一失，通信双方需要进行一次通信测试。</p>
+<h2 id="part-2-通信测试"><a class="header-anchor" href="#part-2-通信测试">¶</a>Part.2 通信测试</h2>
+<p>通信测试很简单，客户端先产生一个验证数据，用<strong>对称加密算法</strong>加密验证数据。首先通过<code>Change Cipher Spec</code>报文通知服务器接下来的报文会用协商好的密码套件加密，然后将加密好的验证数据通过<code>Finish</code>报文发送给服务器。服务器接受到验证数据，解密后用自己的密钥加密。先发送<code>Change Cipher Spec</code>报文通知客户端接下来的报文会用协商好的密码套件加密，然后将加密过的验证数据通过<code>Finish</code>报文回传给客户端。客户端解密后对比是否是原来的报文，是的话就意味着整个加密体系没有问题。握手过程结束。</p>
+<p>接下来，通信双方转到通常模式，可以尽情地在不安全的空间说“悄悄话”了~</p>
+<h2 id="tls会话复用"><a class="header-anchor" href="#tls会话复用">¶</a>TLS会话复用</h2>
+<p>（我一看现在已经写了5k多字了，有点累了。。）TLS握手的过程非常冗长，涉及的运算量也比较大，对服务器会造成很大的压力。那么有什么办法减少握手的次数呢？</p>
+<p>在<code>Client Hello</code>报文以及<code>Server Hello</code>报文中有一个<code>sessionId</code>字段，不知道大家在读了那么多文字之后有没有印象。对于前端的同学，<code>session</code>应该是一个很熟悉的词，它可以帮助我们保存用户登录的状态。那么我们是否可以借用<code>session</code>的思路，把一个<code>session</code>所需的参数在服务器里存储起来，把对应的<code>sessionId</code>发送给客户端。双方约定<code>session</code>失效的时间。当客户端在约定的时间之内使用<code>sessionId</code>与服务器通信，因为双方都保存着加密必要的参数，因此不需要复杂的密钥协商及交换过程就可以通信。这样大大减轻了服务器在握手上的压力。</p>
+<p>但是这又带来了另外一个问题，保存大量的<code>session</code>需要大量的硬盘空间。为了解决这一个问题出现了<code>Session Ticket</code>。服务器将加密的必要参数通过保密的安全密钥加密发送给客户端，客户端加密过的参数。要通信时，在<code>Client Hello</code>报文中将<code>Session Ticket</code>带上。如果服务器能够成功解密的话就可以跳过密钥协商环节直接通信。这样就不用在服务器上存储大量<code>session</code>的信息。（把资源负担留给用户，23333）。</p>
+<h2 id="密码套件"><a class="header-anchor" href="#密码套件">¶</a>密码套件</h2>
+<p>现在，我们来总结一下密码套件中这些东西的作用：</p>
+<ol>
+<li>密钥交换协议：规定通信双方如何交换通信时使用的对称加密算法的密钥。影响<code>Server Key Exchange</code>与<code>Client Key Exchange</code>阶段；</li>
+<li>对称加密算法：规定通信双方在通信时如何加密信息。影响通信测试以及正常通信；</li>
+<li>消息认证码算法：规定如何对内容进行哈希，生成MAC。用于保证信息在传输过程中不受篡改；</li>
+<li>伪随机算法：用于生成主密钥及相关密钥；</li>
+</ol>
+<h2 id="总结"><a class="header-anchor" href="#总结">¶</a>总结</h2>
+<p>TSL/SSL是一个在应用层之下，传输层之上保证应用层协议的数据能够通过不安全信道传输的安全协议。本文介绍了双方如何通过TSL握手建立安全通信的过程。</p>
+<p>但是写道这，感觉还是有一些东西没有讲清楚，如证书验证的过程。这就留一个坑先吧，我们下期再见。</p>
+<h2 id="参考资料"><a class="header-anchor" href="#参考资料">¶</a>参考资料</h2>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/2531">SSL/TLS协议详解(下)——TLS握手协议</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+          
+
+<div class="post-copyright">
+<ul>
+  <li class="post-copyright-author">
+      <strong>本文作者： </strong>Qingyu Deng
+  </li>
+  <li class="post-copyright-link">
+      <strong>本文链接：</strong>
+      <a href="https://ayase.moe/2018/11/15/https-tls/" title="一文弄懂HTTPS（II）-TLS&#x2F;SSL协议握手">https://ayase.moe/2018/11/15/https-tls/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+          <div class="post-tags">
+              <a href="/tags/Computer-Network/" rel="tag"># Computer Network</a>
+              <a href="/tags/HTTPS/" rel="tag"># HTTPS</a>
+              <a href="/tags/Web-Security/" rel="tag"># Web Security</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2018/11/15/https-cryto-basic/" rel="prev" title="一文弄懂HTTPS（I）：密码学基础">
+                  <i class="fa fa-chevron-left"></i> 一文弄懂HTTPS（I）：密码学基础
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/2018/11/20/scroll-event/" rel="next" title="你所不知道的scroll事件：为什么scroll事件会失效？">
+                  你所不知道的scroll事件：为什么scroll事件会失效？ <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    <div class="comments utterances-container"></div>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 2016 – 
+  <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Qingyu Deng</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+    <span title="站点总字数">127k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:55</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <div class="back-to-top" role="button" aria-label="返回顶部">
+    <i class="fa fa-arrow-up fa-lg"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.6.0/pjax.min.js" integrity="sha256-vxLn1tSKWD4dqbMRyv940UYw4sXgMtYcK6reefzZrao=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script src="/js/pjax.js"></script>
+
+  
+
+
+
+
+  
+
+
+
+
+  
+
+  <script class="next-config" data-name="enableMath" type="application/json">true</script><script class="next-config" data-name="mathjax" type="application/json">{"enable":true,"tags":"none","js":{"url":"https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js","integrity":"sha256-MASABpB4tYktI2Oitl4t+78w/lyA+D7b/s9GEP0JOGI="}}</script>
+<script src="/js/third-party/math/mathjax.js"></script>
+
+
+<script class="next-config" data-name="utterances" type="application/json">{"enable":true,"repo":"Ayase-252/Ayase-252.github.io","issue_term":"pathname","theme":"github-light"}</script>
+<script src="/js/third-party/comments/utterances.js"></script>
+
+</body>
+</html>
